@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>197877248013-naqo36ukbkbapmu7krq2bric2qkcmkpd.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.197877248013-naqo36ukbkbapmu7krq2bric2qkcmkpd</string>
+	<key>API_KEY</key>
+	<string>AIzaSyD9eXBp3-iOXGVfbb79YDONHhq2qj_BDTU</string>
+	<key>GCM_SENDER_ID</key>
+	<string>197877248013</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.seifeddinegarbi.productivitymorningroutine</string>
+	<key>PROJECT_ID</key>
+	<string>productivity-morning-routine</string>
+	<key>STORAGE_BUCKET</key>
+	<string>productivity-morning-routine.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:197877248013:ios:bcb014049dca64c389e544</string>
+</dict>
+</plist>

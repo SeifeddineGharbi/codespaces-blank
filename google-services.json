@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "197877248013",
+    "project_id": "productivity-morning-routine",
+    "storage_bucket": "productivity-morning-routine.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:197877248013:android:9a310e006c16304489e544",
+        "android_client_info": {
+          "package_name": "com.seifeddinegarbi.productivitymorningroutine"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "197877248013-t0acfmlhg6ma1ng6s0rl0sa9ofmicdgv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEhFxLTUamzuJZKRYnZAX07yI7f1p_-IQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "197877248013-t0acfmlhg6ma1ng6s0rl0sa9ofmicdgv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "197877248013-naqo36ukbkbapmu7krq2bric2qkcmkpd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.seifeddinegarbi.productivitymorningroutine"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
