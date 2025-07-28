@@ -155,3 +155,13 @@ Comprehensive project documentation available in `/docs/`:
 - `Detailed_app_flow.md`: Complete user journey
 - `database_schema_design.md`: Data architecture
 - `sample_content_data.md`: Sample content structure
+
+## Task Completion & Testing Protocol
+
+**CRITICAL RULE:** After completing each task (major prompt from user), Claude Code MUST provide:
+
+1. **Testing Instructions:** Clear, step-by-step instructions on how to test/verify the implementation
+2. **Expected Results:** What the user should see/experience when testing
+3. **Commit Message:** Brief, descriptive commit message for the changes made
+
+This ensures every implementation is verifiable and changes are properly documented for version control.
