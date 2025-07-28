@@ -16,6 +16,9 @@ npm start
 # or
 expo start
 
+# CODESPACES USERS: Use tunnel mode for device testing
+npx expo start --tunnel
+
 # Run on Android
 npm run android
 # or
@@ -137,6 +140,7 @@ npx gluestack-ui@latest add [component-name]
 
 ## Testing Strategy
 - **Primary:** Android device via Expo Go (continuous testing)
+- **Codespaces Users:** Use `npx expo start --tunnel` for device testing
 - **Production:** EAS Build for app store submission
 - Use @testing-library/react-native with jest for unit tests
 
