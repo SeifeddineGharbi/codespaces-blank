@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for user authentication and data validation
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'profile', 'onboarding', 'routine', 'settings', 'subscription', 'stats', 'metadata']) &&
+             data.userId == request.auth.uid &&
+             data.profile.email is string &&
+             data.profile.timeZone is string &&
+             data.profile.locale is string &&
+             data.onboarding.isCompleted is bool &&
+             data.routine.wakeTime is string &&
+             data.routine.routineDuration is number &&
+             data.settings.notifications.morningReminder is bool &&
+             data.subscription.status in ['active', 'cancelled', 'expired', 'trial', 'none'] &&
+             data.stats.totalCompletions >= 0 &&
+             data.stats.currentStreak >= 0 &&
+             data.metadata.version is number;
+    }
+    
+    function isValidDailyProgress(data) {
+      return data.keys().hasAll(['userId', 'date', 'session', 'tasks', 'metadata']) &&
+             data.userId == request.auth.uid &&
+             data.date is string &&
+             data.session.isCompleted is bool &&
+             data.session.completionPercentage >= 0 &&
+             data.session.completionPercentage <= 100 &&
+             data.tasks is list &&
+             data.metadata.dataSource in ['app', 'sync', 'manual'];
+    }
+    
+    function isValidSubscription(data) {
+      return data.keys().hasAll(['userId', 'current', 'metadata']) &&
+             data.userId == request.auth.uid &&
+             data.current.status in ['active', 'cancelled', 'expired', 'trial', 'none'] &&
+             data.current.autoRenew is bool;
+    }
+    
+    // Users collection - users can only access their own data
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && 
+                       isValidUserProfile(request.resource.data) &&
+                       request.resource.data.userId == resource.data.userId;
+    }
+    
+    // User progress subcollection - users can only access their own progress
+    match /user_progress/{userId} {
+      allow read, write: if isOwner(userId);
+      
+      match /daily_entries/{dateString} {
+        allow read, write: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidDailyProgress(request.resource.data);
+        allow update: if isOwner(userId) && 
+                         isValidDailyProgress(request.resource.data) &&
+                         request.resource.data.userId == resource.data.userId;
+      }
+    }
+    
+    // Subscriptions collection - users can only access their own subscription
+    match /subscriptions/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidSubscription(request.resource.data);
+      allow update: if isOwner(userId) && 
+                       isValidSubscription(request.resource.data) &&
+                       request.resource.data.userId == resource.data.userId;
+    }
+    
+    // Support tickets - users can only access their own tickets
+    match /support_tickets/{ticketId} {
+      allow read, write: if isAuthenticated() && 
+                           resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.keys().hasAll(['ticketId', 'userId', 'ticket', 'userContext', 'metadata']) &&
+                       request.resource.data.ticket.category in ['bug', 'feature_request', 'billing', 'general', 'technical'] &&
+                       request.resource.data.ticket.priority in ['low', 'medium', 'high', 'urgent'] &&
+                       request.resource.data.ticket.status in ['open', 'in_progress', 'resolved', 'closed'];
+    }
+    
+    // App configuration - read-only for authenticated users
+    match /app_config/{document} {
+      allow read: if isAuthenticated();
+      // Only allow admins to write (implement admin check if needed)
+      allow write: if false; // For now, no client-side writes to app config
+    }
+    
+    // Analytics events - write-only for authenticated users (their own events)
+    match /analytics_events/{eventId} {
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.keys().hasAll(['eventId', 'userId', 'event', 'context', 'metadata']) &&
+                       request.resource.data.event.category in ['user_action', 'system', 'business', 'performance'] &&
+                       request.resource.data.event.name is string &&
+                       request.resource.data.context.appVersion is string &&
+                       request.resource.data.context.platform in ['ios', 'android'];
+      // Analytics events are write-only for privacy
+      allow read: if false;
+      allow update, delete: if false;
+    }
+    
+    // Backup logs - read-only for authenticated users (system generated)
+    match /backup_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // System generated only
+    }
+    
+    // Query logs - system use only
+    match /query_logs/{logId} {
+      allow read, write: if false; // System use only
+    }
+  }
+}

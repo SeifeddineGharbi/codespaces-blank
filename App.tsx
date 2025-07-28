@@ -1,15 +1,47 @@
 // Main entry point for Productivity Morning Routine App
-// Architecture: Project Architect setup with navigation structure
+// Architecture: Project Architect setup with navigation structure + Firebase integration
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GluestackUIProvider } from "./components/ui/gluestack-ui-provider";
 import AppNavigator from './src/navigation/AppNavigator';
+
+// Import Firebase testing utilities for development
+import { logFirebaseStatus, quickFirebaseCheck } from './src/utils/firebaseTest';
 
 // Import global CSS for NativeWind styling
 import "./global.css";
 
 export default function App() {
+  // Firebase initialization check on app start
+  useEffect(() => {
+    const initializeFirebase = async () => {
+      try {
+        console.log('🚀 Productivity Morning Routine - App Starting');
+        
+        // Log Firebase configuration status
+        logFirebaseStatus();
+        
+        // Quick Firebase health check
+        const isFirebaseHealthy = await quickFirebaseCheck();
+        
+        if (isFirebaseHealthy) {
+          console.log('✅ Firebase is ready for use');
+        } else {
+          console.warn('⚠️ Firebase health check failed - some features may not work');
+        }
+        
+      } catch (error) {
+        console.error('❌ Firebase initialization error:', error);
+      }
+    };
+
+    // Only run Firebase checks in development mode
+    if (__DEV__) {
+      initializeFirebase();
+    }
+  }, []);
+
   return (
     <SafeAreaProvider>
       <GluestackUIProvider mode="light">
