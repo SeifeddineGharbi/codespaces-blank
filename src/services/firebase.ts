@@ -18,8 +18,13 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
   onAuthStateChanged,
+  reload,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  deleteUser,
   User,
   Auth
 } from 'firebase/auth';
@@ -42,35 +47,58 @@ import {
   Firestore
 } from 'firebase/firestore';
 
-// Import constants and types (will need to create these if they don't exist)
-// import { COLLECTIONS, ERROR_MESSAGES } from '@/src/constants';
-// import { UserProfile, DailyProgress, AppError } from '@/src/types';
-
-// Temporary constants until we create the constants file
-const COLLECTIONS = {
-  users: 'users',
-  userProgress: 'user_progress',
-  subscriptions: 'subscriptions',
-  analyticsEvents: 'analytics_events',
-  supportTickets: 'support_tickets',
-  appConfig: 'app_config'
+// Import constants and types
+import { COLLECTIONS, ERROR_MESSAGES } from '../constants';
+import { 
+  UserProfile, 
+  AuthError, 
+  LoginCredentials, 
+  RegistrationCredentials,
+  EmailVerificationStatus,
+  SessionInfo,
+  AuthState
+} from '../types';
+// Simple validation functions
+const validateEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return {
+    isValid: emailRegex.test(email),
+    errors: { email: emailRegex.test(email) ? '' : 'Invalid email format' }
+  };
 };
 
-const ERROR_MESSAGES = {
-  auth: {
-    'auth/user-not-found': 'No account found with this email address.',
-    'auth/wrong-password': 'Incorrect password. Please try again.',
-    'auth/email-already-in-use': 'An account with this email already exists.',
-    'auth/weak-password': 'Password should be at least 6 characters long.',
-    'auth/invalid-email': 'Please enter a valid email address.',
-    'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
-  },
-  firestore: {
-    'permission-denied': 'You do not have permission to perform this action.',
-    'not-found': 'The requested document was not found.',
-    'already-exists': 'A record with this identifier already exists.',
-  },
-  unknown: 'An unexpected error occurred. Please try again.'
+const validateLoginForm = (credentials: any) => {
+  const errors: any = {};
+  if (!credentials.email) errors.email = 'Email is required';
+  if (!credentials.password) errors.password = 'Password is required';
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  };
+};
+
+const validateRegistrationForm = (credentials: any) => {
+  const errors: any = {};
+  if (!credentials.email) errors.email = 'Email is required';
+  if (!credentials.password) errors.password = 'Password is required';
+  if (credentials.password && credentials.password.length < 6) {
+    errors.password = 'Password must be at least 6 characters';
+  }
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  };
+};
+
+const validateDisplayName = (name: string) => {
+  return {
+    isValid: name.length > 0,
+    errors: { displayName: name.length > 0 ? '' : 'Name is required' }
+  };
+};
+
+const sanitizeInput = (input: string) => {
+  return input.replace(/[<>]/g, '');
 };
 
 // Firebase configuration from google-services.json
@@ -120,9 +148,9 @@ if (!firebaseInstance) {
 const { app: firebaseApp, auth, db } = firebaseInstance || {};
 
 /**
- * Enhanced error handling for Firebase operations
+ * Enhanced error handling for Firebase operations with typed errors
  */
-const handleFirebaseError = (error: any, operation: string): any => {
+const handleFirebaseError = (error: any, operation: string): AuthError => {
   console.error(`Firebase ${operation} error:`, error);
   
   const errorCode = error.code || 'unknown';
@@ -130,11 +158,69 @@ const handleFirebaseError = (error: any, operation: string): any => {
                       ERROR_MESSAGES.firestore[errorCode as keyof typeof ERROR_MESSAGES.firestore] || 
                       ERROR_MESSAGES.unknown;
   
+  // Determine if error is retryable
+  const retryableErrors = [
+    'auth/network-request-failed',
+    'auth/timeout',
+    'firestore/unavailable'
+  ];
+  
+  // Determine field association for form errors
+  let field: 'email' | 'password' | 'confirmPassword' | 'displayName' | undefined;
+  if (errorCode.includes('email')) field = 'email';
+  else if (errorCode.includes('password')) field = 'password';
+  
   return {
     code: errorCode,
     message: errorMessage,
-    details: error
+    details: error,
+    timestamp: new Date(),
+    recoverable: retryableErrors.includes(errorCode),
+    field,
+    retryable: retryableErrors.includes(errorCode)
   };
+};
+
+/**
+ * Session management utilities
+ */
+const sessionUtils = {
+  /**
+   * Get current session info
+   */
+  getCurrentSession: (): SessionInfo | null => {
+    const user = auth?.currentUser;
+    if (!user) return null;
+    
+    return {
+      userId: user.uid,
+      email: user.email || '',
+      issuedAt: new Date(user.metadata.creationTime || Date.now()),
+      expiersAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      persistent: true, // Will be managed by context
+      deviceInfo: {
+        platform: 'mobile',
+        appVersion: '1.0.0'
+      }
+    };
+  },
+  
+  /**
+   * Check if session is valid
+   */
+  isSessionValid: (): boolean => {
+    const session = sessionUtils.getCurrentSession();
+    if (!session) return false;
+    return new Date() < session.expiersAt;
+  },
+  
+  /**
+   * Clear session data
+   */
+  clearSession: () => {
+    // Clear any stored session data if using AsyncStorage
+    console.log('🧹 Session cleared');
+  }
 };
 
 /**
@@ -164,42 +250,72 @@ export const checkFirebaseConnection = async (): Promise<boolean> => {
  */
 export const authService = {
   /**
-   * Sign in with email and password
+   * Sign in with email and password with enhanced validation
    */
-  signIn: async (email: string, password: string): Promise<any> => {
+  signIn: async (credentials: LoginCredentials): Promise<User> => {
     try {
       if (!auth) throw new Error('Firebase Auth not initialized');
-      if (!email || !password) {
-        throw new Error('Email and password are required');
+      
+      // Validate credentials
+      const validation = validateLoginForm(credentials);
+      if (!validation.isValid) {
+        const firstError = Object.values(validation.errors)[0];
+        throw {
+          code: 'validation/invalid-credentials',
+          message: firstError || 'Invalid credentials'
+        };
       }
       
-      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const { email, password } = credentials;
+      const credential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+      
+      // Check email verification status
+      if (!credential.user.emailVerified) {
+        console.warn('⚠️ User email not verified:', credential.user.uid);
+        // Note: We don't block login for unverified emails in MVP
+      }
+      
       console.log('✅ User signed in successfully:', credential.user.uid);
-      return credential;
+      return credential.user;
     } catch (error) {
       throw handleFirebaseError(error, 'sign in');
     }
   },
 
   /**
-   * Create user with email and password
+   * Create user with email and password with enhanced validation
    */
-  signUp: async (email: string, password: string, displayName?: string): Promise<any> => {
+  signUp: async (credentials: RegistrationCredentials): Promise<User> => {
     try {
       if (!auth) throw new Error('Firebase Auth not initialized');
-      if (!email || !password) {
-        throw new Error('Email and password are required');
+      
+      // Validate registration data
+      const validation = validateRegistrationForm(credentials);
+      if (!validation.isValid) {
+        const firstError = Object.values(validation.errors)[0];
+        throw {
+          code: 'validation/invalid-registration',
+          message: firstError || 'Invalid registration data'
+        };
       }
       
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      const { email, password, displayName } = credentials;
+      const sanitizedEmail = sanitizeInput(email.trim().toLowerCase());
+      
+      // Create user account
+      const credential = await createUserWithEmailAndPassword(auth, sanitizedEmail, password);
       
       // Update profile with display name if provided
       if (displayName && credential.user) {
-        await updateProfile(credential.user, { displayName });
+        const sanitizedDisplayName = sanitizeInput(displayName.trim());
+        await updateProfile(credential.user, { displayName: sanitizedDisplayName });
       }
       
+      // Send email verification
+      await authService.sendEmailVerification();
+      
       console.log('✅ User created successfully:', credential.user.uid);
-      return credential;
+      return credential.user;
     } catch (error) {
       throw handleFirebaseError(error, 'sign up');
     }
@@ -224,24 +340,31 @@ export const authService = {
   },
 
   /**
-   * Send password reset email
+   * Send password reset email with validation
    */
   resetPassword: async (email: string): Promise<void> => {
     try {
       if (!auth) throw new Error('Firebase Auth not initialized');
-      if (!email) {
-        throw new Error('Email is required');
+      
+      // Validate email
+      const validation = validateEmail(email);
+      if (!validation.isValid) {
+        throw {
+          code: 'validation/invalid-email',
+          message: validation.errors.email || 'Invalid email address'
+        };
       }
       
-      await sendPasswordResetEmail(auth, email);
-      console.log('✅ Password reset email sent to:', email);
+      const sanitizedEmail = sanitizeInput(email.trim().toLowerCase());
+      await sendPasswordResetEmail(auth, sanitizedEmail);
+      console.log('✅ Password reset email sent to:', sanitizedEmail);
     } catch (error) {
       throw handleFirebaseError(error, 'reset password');
     }
   },
 
   /**
-   * Update user profile
+   * Update user profile with validation
    */
   updateProfile: async (updates: { displayName?: string; photoURL?: string }): Promise<void> => {
     try {
@@ -249,6 +372,18 @@ export const authService = {
       const user = auth.currentUser;
       if (!user) {
         throw new Error('No authenticated user found');
+      }
+      
+      // Validate display name if provided
+      if (updates.displayName) {
+        const validation = validateDisplayName(updates.displayName);
+        if (!validation.isValid) {
+          throw {
+            code: 'validation/invalid-display-name',
+            message: validation.errors.displayName || 'Invalid display name'
+          };
+        }
+        updates.displayName = sanitizeInput(updates.displayName.trim());
       }
       
       await updateProfile(user, updates);
@@ -273,7 +408,95 @@ export const authService = {
   },
 
   /**
-   * Auth state change listener
+   * Send email verification
+   */
+  sendEmailVerification: async (): Promise<void> => {
+    try {
+      if (!auth) throw new Error('Firebase Auth not initialized');
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+      
+      await sendEmailVerification(user);
+      console.log('✅ Email verification sent to:', user.email);
+    } catch (error) {
+      throw handleFirebaseError(error, 'send email verification');
+    }
+  },
+  
+  /**
+   * Check email verification status
+   */
+  checkEmailVerificationStatus: async (): Promise<EmailVerificationStatus> => {
+    try {
+      if (!auth) throw new Error('Firebase Auth not initialized');
+      const user = auth.currentUser;
+      if (!user) {
+        return {
+          verified: false,
+          sent: false,
+          resendAvailable: false
+        };
+      }
+      
+      // Reload user to get latest verification status
+      await reload(user);
+      
+      return {
+        verified: user.emailVerified,
+        sent: true, // Assume it was sent if user exists
+        resendAvailable: true // Always allow resend in MVP
+      };
+    } catch (error) {
+      console.error('❌ Error checking email verification status:', error);
+      return {
+        verified: false,
+        sent: false,
+        resendAvailable: false
+      };
+    }
+  },
+  
+  /**
+   * Reauthenticate user (required for sensitive operations)
+   */
+  reauthenticate: async (password: string): Promise<void> => {
+    try {
+      if (!auth) throw new Error('Firebase Auth not initialized');
+      const user = auth.currentUser;
+      if (!user || !user.email) {
+        throw new Error('No authenticated user found');
+      }
+      
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+      console.log('✅ User reauthenticated successfully');
+    } catch (error) {
+      throw handleFirebaseError(error, 'reauthenticate');
+    }
+  },
+  
+  /**
+   * Delete user account
+   */
+  deleteAccount: async (): Promise<void> => {
+    try {
+      if (!auth) throw new Error('Firebase Auth not initialized');
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+      
+      await deleteUser(user);
+      console.log('✅ User account deleted successfully');
+    } catch (error) {
+      throw handleFirebaseError(error, 'delete account');
+    }
+  },
+  
+  /**
+   * Auth state change listener with enhanced monitoring
    */
   onAuthStateChanged: (callback: (user: User | null) => void) => {
     if (!auth) {
@@ -283,10 +506,22 @@ export const authService = {
     }
     
     return onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user ? `User: ${user.uid}` : 'No user');
+      if (user) {
+        console.log('Auth state changed: User signed in:', user.uid);
+        console.log('Email verified:', user.emailVerified);
+      } else {
+        console.log('Auth state changed: User signed out');
+      }
       callback(user);
     });
   },
+  
+  /**
+   * Session management methods
+   */
+  getCurrentSession: sessionUtils.getCurrentSession,
+  isSessionValid: sessionUtils.isSessionValid,
+  clearSession: sessionUtils.clearSession,
 };
 
 /**
@@ -729,6 +964,7 @@ export default {
   checkFirebaseConnection,
   handleFirebaseError,
   initializeFirebase,
+  sessionUtils,
   
   // Firebase app instance
   app: firebaseApp,

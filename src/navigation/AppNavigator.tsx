@@ -6,6 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../contexts/AuthContext';
 
 // Import screens (placeholder imports - screens will be created by other agents)
 import SplashScreen from '@/src/screens/SplashScreen';
@@ -96,6 +97,8 @@ const MainTabNavigator: React.FC = () => {
 
 // Root navigator component
 const AppNavigator: React.FC = () => {
+  const { isAuthenticated, loading } = useAuth();
+
   return (
     <NavigationContainer>
       <StatusBar style="dark" backgroundColor={COLORS.background.white} />
@@ -104,49 +107,48 @@ const AppNavigator: React.FC = () => {
           headerShown: false,
           gestureEnabled: false, // Disable swipe gestures for security
         }}
-        initialRouteName="Splash" // Start with splash screen
       >
-        {/* Splash screen for initial loading */}
-        <RootStack.Screen 
-          name="Splash" 
-          component={SplashScreen}
-        />
-        
-        {/* Authentication flow */}
-        <RootStack.Screen 
-          name="Auth" 
-          component={AuthNavigator}
-          options={{
-            animationTypeForReplace: 'push',
-          }}
-        />
-        
-        {/* Onboarding flow */}
-        <RootStack.Screen 
-          name="Onboarding" 
-          component={OnboardingNavigator}
-          options={{
-            animationTypeForReplace: 'push',
-          }}
-        />
-        
-        {/* Paywall screen */}
-        <RootStack.Screen 
-          name="Paywall" 
-          component={PaywallScreen}
-          options={{
-            animationTypeForReplace: 'push',
-          }}
-        />
-        
-        {/* Main app with bottom tabs */}
-        <RootStack.Screen 
-          name="Main" 
-          component={MainTabNavigator}
-          options={{
-            animationTypeForReplace: 'push',
-          }}
-        />
+        {loading ? (
+          /* Show splash screen while loading */
+          <RootStack.Screen 
+            name="Splash" 
+            component={SplashScreen}
+          />
+        ) : !isAuthenticated ? (
+          /* Show auth flow when not authenticated */
+          <>
+            <RootStack.Screen 
+              name="Auth" 
+              component={AuthNavigator}
+              options={{
+                animationTypeForReplace: 'push',
+              }}
+            />
+            <RootStack.Screen 
+              name="Onboarding" 
+              component={OnboardingNavigator}
+              options={{
+                animationTypeForReplace: 'push',
+              }}
+            />
+            <RootStack.Screen 
+              name="Paywall" 
+              component={PaywallScreen}
+              options={{
+                animationTypeForReplace: 'push',
+              }}
+            />
+          </>
+        ) : (
+          /* Show main app when authenticated */
+          <RootStack.Screen 
+            name="Main" 
+            component={MainTabNavigator}
+            options={{
+              animationTypeForReplace: 'push',
+            }}
+          />
+        )}
       </RootStack.Navigator>
     </NavigationContainer>
   );

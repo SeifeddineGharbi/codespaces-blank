@@ -220,6 +220,7 @@ export type OnboardingStackParamList = {
 export interface LoginFormData {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 export interface RegisterFormData {
@@ -227,6 +228,9 @@ export interface RegisterFormData {
   password: string;
   confirmPassword: string;
   displayName?: string;
+  acceptTerms: boolean;
+  acceptPrivacy: boolean;
+  receiveMarketing?: boolean;
 }
 
 export interface OnboardingQuestionData {
@@ -236,16 +240,94 @@ export interface OnboardingQuestionData {
   skipped?: boolean;
 }
 
-// Context types
-export interface AuthContextType {
+// Authentication state types
+export interface AuthState {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<void>;
+  initializing: boolean;
+  isAuthenticated: boolean;
+  sessionExpiry?: Date;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface RegistrationCredentials {
+  email: string;
+  password: string;
+  displayName?: string;
+  acceptTerms: boolean;
+}
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface EmailVerificationStatus {
+  verified: boolean;
+  sent: boolean;
+  resendAvailable: boolean;
+  nextResendTime?: Date;
+}
+
+export interface AuthValidationResult {
+  isValid: boolean;
+  errors: {
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+    displayName?: string;
+    acceptTerms?: string;
+  };
+}
+
+export interface PasswordStrengthResult {
+  score: number; // 0-4 (0 = very weak, 4 = very strong)
+  feedback: string[];
+  hasMinLength: boolean;
+  hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasNumber: boolean;
+  hasSpecialChar: boolean;
+}
+
+// Context types
+export interface AuthContextType {
+  // State
+  user: User | null;
+  userProfile: UserProfile | null;
+  loading: boolean;
+  initializing: boolean;
+  isAuthenticated: boolean;
+  emailVerificationStatus: EmailVerificationStatus;
+  
+  // Authentication methods
+  signIn: (credentials: LoginCredentials) => Promise<void>;
+  signUp: (credentials: RegistrationCredentials) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  
+  // Profile management
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  refreshProfile: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  
+  // Email verification
+  sendEmailVerification: () => Promise<void>;
+  checkEmailVerificationStatus: () => Promise<EmailVerificationStatus>;
+  
+  // Session management
+  refreshSession: () => Promise<void>;
+  checkSessionValidity: () => boolean;
+  
+  // Validation utilities
+  validateEmail: (email: string) => AuthValidationResult;
+  validatePassword: (password: string) => PasswordStrengthResult;
+  validateRegistration: (credentials: RegistrationCredentials) => AuthValidationResult;
 }
 
 export interface TaskContextType {
@@ -282,6 +364,13 @@ export interface AppError {
   code: string;
   message: string;
   details?: any;
+  timestamp?: Date;
+  recoverable?: boolean;
+}
+
+export interface AuthError extends AppError {
+  field?: 'email' | 'password' | 'confirmPassword' | 'displayName';
+  retryable?: boolean;
 }
 
 export type ErrorCode = 
@@ -290,9 +379,45 @@ export type ErrorCode =
   | 'auth/email-already-in-use'
   | 'auth/weak-password'
   | 'auth/invalid-email'
+  | 'auth/too-many-requests'
+  | 'auth/user-disabled'
+  | 'auth/operation-not-allowed'
+  | 'auth/email-not-verified'
+  | 'auth/requires-recent-login'
+  | 'auth/credential-already-in-use'
   | 'firestore/permission-denied'
   | 'firestore/unavailable'
+  | 'firestore/unauthenticated'
   | 'network/no-connection'
+  | 'network/timeout'
   | 'subscription/expired'
   | 'subscription/invalid'
+  | 'validation/invalid-email'
+  | 'validation/weak-password'
+  | 'validation/passwords-mismatch'
+  | 'validation/terms-not-accepted'
   | 'unknown';
+
+// Session management types
+export interface SessionInfo {
+  userId: string;
+  email: string;
+  issuedAt: Date;
+  expiersAt: Date;
+  deviceInfo?: {
+    platform: string;
+    appVersion: string;
+    deviceId?: string;
+  };
+  persistent: boolean;
+}
+
+export interface AuthProviderConfig {
+  enableEmailVerification: boolean;
+  enablePasswordReset: boolean;
+  sessionTimeout: number; // minutes
+  maxLoginAttempts: number;
+  lockoutDuration: number; // minutes
+  enableRememberMe: boolean;
+  requireStrongPasswords: boolean;
+}

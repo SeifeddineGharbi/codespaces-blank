@@ -76,6 +76,30 @@ npx gluestack-ui@latest add [component-name]
 4. **Gluestack UI v2:** Use copy-paste components, don't build UI from scratch
 5. **Expo Compatibility:** Only use expo-compatible packages (react-native-*, @react-native-community/*, expo-*)
 6. **Firebase Backend:** Use Firebase for all backend needs
+7. **IMPORT PATHS:** ALWAYS use configured aliases - NEVER use relative paths like `../../../`
+
+## Import Path Rules (CRITICAL)
+
+**ALWAYS use these configured aliases from babel.config.js:**
+- UI Components: `@/components/ui/button` (NOT `../../../../components/ui/button`)
+- Services: `@/services/firebase` (NOT `../../services/firebase`)  
+- Types: `@/types` (NOT `../../types/index`)
+- Constants: `@/constants` (NOT `../../constants/index`)
+- Screens: `@/screens/auth/LoginScreen` (NOT `../auth/LoginScreen`)
+- Utils: `@/utils` (NOT `../../utils/index`)
+- Hooks: `@/hooks/useAuth` (NOT `../../hooks/useAuth`)
+
+**Example Correct Imports:**
+```typescript
+// ✅ CORRECT - Use aliases
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { COLORS } from '@/constants';
+
+// ❌ WRONG - Never use relative paths
+import { Button } from '../../../../components/ui/button';
+import { useAuth } from '../../contexts/AuthContext';
+```
 
 ## App Flow & Business Logic
 
@@ -158,10 +182,10 @@ Comprehensive project documentation available in `/docs/`:
 
 ## Task Completion & Testing Protocol
 
-**CRITICAL RULE:** After completing each task (major prompt from user), Claude Code MUST provide:
+**CRITICAL RULE:** After completing each task (major prompt from user), Claude Code MUST:
 
-1. **Testing Instructions:** Clear, step-by-step instructions on how to test/verify the implementation
-2. **Expected Results:** What the user should see/experience when testing
-3. **Commit Message:** Brief, descriptive commit message for the changes made
+1. **Test Build First:** Always run `npx expo start --tunnel` and fix ALL errors before asking user to test
+2. **Ensure Clean Build:** No bundling errors, import errors, or compilation failures allowed
+3. **Only Then Provide:** Testing instructions, expected results, and commit message after confirming app builds successfully
 
-This ensures every implementation is verifiable and changes are properly documented for version control.
+**NEVER ask user to test if `npx expo start --tunnel` shows any errors - fix them first!**

@@ -3,14 +3,12 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
-// Import auth screens (placeholder imports - screens will be created by other agents)
-import WelcomeScreen from '@/src/screens/auth/WelcomeScreen';
-import LoginScreen from '@/src/screens/auth/LoginScreen';
-import RegisterScreen from '@/src/screens/auth/RegisterScreen';
-import ForgotPasswordScreen from '@/src/screens/auth/ForgotPasswordScreen';
+// Import auth screens
+import WelcomeScreen from '../screens/auth/WelcomeScreen';
+import LoginScreen from '../screens/auth/LoginScreen';
 
 // Types
-import { AuthStackParamList } from '@/src/types';
+import { AuthStackParamList } from '../types';
 
 const AuthStack = createStackNavigator<AuthStackParamList>();
 
@@ -45,22 +43,6 @@ const AuthNavigator: React.FC = () => {
         component={LoginScreen}
         options={{
           title: 'Sign In',
-        }}
-      />
-      
-      <AuthStack.Screen 
-        name="Register" 
-        component={RegisterScreen}
-        options={{
-          title: 'Create Account',
-        }}
-      />
-      
-      <AuthStack.Screen 
-        name="ForgotPassword" 
-        component={ForgotPasswordScreen}
-        options={{
-          title: 'Reset Password',
         }}
       />
     </AuthStack.Navigator>

@@ -258,21 +258,39 @@ export const COLLECTIONS = {
 
 // Error messages
 export const ERROR_MESSAGES = {
-  network: 'Please check your internet connection and try again.',
+  networkGeneral: 'Please check your internet connection and try again.',
   auth: {
     'auth/user-not-found': 'No account found with this email address.',
     'auth/wrong-password': 'Incorrect password. Please try again.',
     'auth/email-already-in-use': 'An account already exists with this email address.',
     'auth/weak-password': 'Password should be at least 8 characters long.',
     'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
+    'auth/user-disabled': 'This account has been disabled. Please contact support.',
+    'auth/operation-not-allowed': 'This operation is not allowed. Please contact support.',
+    'auth/email-not-verified': 'Please verify your email address before continuing.',
+    'auth/requires-recent-login': 'This operation requires recent authentication. Please log in again.',
+    'auth/credential-already-in-use': 'This credential is already associated with another account.',
+    'validation/invalid-email': 'Please enter a valid email address.',
+    'validation/weak-password': 'Password does not meet security requirements.',
+    'validation/passwords-mismatch': 'Passwords do not match.',
+    'validation/terms-not-accepted': 'You must accept the Terms of Service to continue.',
+    'validation/invalid-credentials': 'Please check your login credentials.',
+    'validation/invalid-registration': 'Please check your registration information.',
+    'validation/invalid-display-name': 'Please enter a valid name.',
   },
   firestore: {
     'firestore/permission-denied': 'You don\'t have permission to access this data.',
     'firestore/unavailable': 'Service temporarily unavailable. Please try again.',
+    'firestore/unauthenticated': 'Please sign in to access this feature.',
   },
   subscription: {
     'subscription/expired': 'Your subscription has expired. Please renew to continue.',
     'subscription/invalid': 'Invalid subscription. Please contact support.',
+  },
+  network: {
+    'network/no-connection': 'Please check your internet connection and try again.',
+    'network/timeout': 'Request timed out. Please try again.',
   },
   unknown: 'Something went wrong. Please try again.',
 } as const;
@@ -306,6 +324,28 @@ export const VALIDATION_RULES = {
   },
 } as const;
 
+// Authentication configuration
+export const AUTH_CONFIG = {
+  enableEmailVerification: true,
+  enablePasswordReset: true,
+  sessionTimeout: 24 * 60, // 24 hours in minutes
+  maxLoginAttempts: 5,
+  lockoutDuration: 15, // minutes
+  enableRememberMe: true,
+  requireStrongPasswords: !__DEV__, // Only in production
+  emailVerificationRequired: false, // Don't block login in MVP
+  minPasswordLength: 8,
+  maxPasswordLength: 128,
+} as const;
+
+// Session management
+export const SESSION_CONFIG = {
+  storageKey: 'auth_session',
+  refreshThreshold: 5 * 60 * 1000, // 5 minutes before expiry
+  maxSessionDuration: 30 * 24 * 60 * 60 * 1000, // 30 days
+  rememberMeDuration: 90 * 24 * 60 * 60 * 1000, // 90 days
+} as const;
+
 // App feature flags
 export const FEATURE_FLAGS = {
   enableAnalytics: true,
@@ -313,5 +353,6 @@ export const FEATURE_FLAGS = {
   enableSubscriptions: true,
   enableOnboarding: true,
   enableStreakSystem: true,
+  enableEmailVerification: AUTH_CONFIG.enableEmailVerification,
   debugMode: __DEV__,
 } as const;

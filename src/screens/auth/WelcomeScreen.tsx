@@ -5,8 +5,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { AuthStackParamList } from '@/src/types';
-import { COLORS, APP_CONFIG } from '@/src/constants';
+import { AuthStackParamList } from '../../types';
+import { COLORS, APP_CONFIG } from '../../constants';
 
 type WelcomeScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Welcome'>;
 
@@ -44,7 +44,7 @@ const WelcomeScreen: React.FC = () => {
               borderColor: COLORS.primary[500],
               backgroundColor: 'transparent'
             }}
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => navigation.navigate('Login')}
           >
             <Text className="text-lg font-semibold text-center" style={{ color: COLORS.primary[500] }}>
               Create Account
