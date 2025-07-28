@@ -36,18 +36,17 @@ import {
   FirestoreUserProfile, 
   FirestoreDailyProgress, 
   FirestoreTaskCompletion,
-  FirestoreOnboardingResponses,
-  MVP_TASKS
-} from '@/src/types';
-import { COLLECTIONS, SCORING_CONFIG } from '@/src/constants';
-import { db } from '@/src/services/firebase';
+  FirestoreOnboardingResponses
+} from '../types';
+import { COLLECTIONS, SCORING_CONFIG, MVP_TASKS } from '../constants';
+import { db } from './firebase';
 import { 
   validateUserProfile, 
   validateDailyProgress, 
   validateOnboardingResponses,
   ValidationResult 
-} from '@/src/services/validation';
-import { calculateDailyScore, scoringUtils } from '@/src/services/scoring';
+} from './validation';
+import { calculateDailyScore, scoringUtils } from './scoring';
 
 // Database operation interfaces
 export interface DatabaseResult<T> {

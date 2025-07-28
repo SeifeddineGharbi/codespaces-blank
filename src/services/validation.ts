@@ -14,10 +14,9 @@ import {
   FirestoreDailyProgress, 
   FirestoreTaskCompletion,
   FirestoreOnboardingResponses,
-  FirestoreRoutineTask,
-  MVP_TASKS
-} from '@/src/types';
-import { SCORING_CONFIG } from '@/src/constants';
+  FirestoreRoutineTask
+} from '../types';
+import { SCORING_CONFIG, MVP_TASKS } from '../constants';
 
 // Validation result interface
 export interface ValidationResult {

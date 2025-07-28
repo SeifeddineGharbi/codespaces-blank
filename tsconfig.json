@@ -24,7 +24,7 @@
         "./src/screens/*"
       ],
       "@/components/*": [
-        "./src/components/*"
+        "./components/*"
       ],
       "@/services/*": [
         "./src/services/*"

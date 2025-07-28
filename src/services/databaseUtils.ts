@@ -15,10 +15,9 @@ import {
   FirestoreTaskCompletion,
   UserProfile,
   DailyProgress,
-  TaskCompletion,
-  MVP_TASKS
-} from '@/src/types';
-import { SCORING_CONFIG } from '@/src/constants';
+  TaskCompletion
+} from '../types';
+import { SCORING_CONFIG, MVP_TASKS } from '../constants';
 
 /**
  * Data Transformation Utilities

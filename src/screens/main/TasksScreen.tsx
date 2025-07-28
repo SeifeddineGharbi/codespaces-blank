@@ -3,8 +3,7 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '@/src/constants';
-import { MVP_TASKS } from '@/src/types';
+import { COLORS, MVP_TASKS } from '../../constants';
 
 const TasksScreen: React.FC = () => {
   return (

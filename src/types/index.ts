@@ -1,6 +1,9 @@
 // Type definitions for Productivity Morning Routine App
 import { Timestamp } from 'firebase/firestore';
 
+// Onboarding question types
+export type QuestionType = 'time_picker' | 'single_choice' | 'multiple_choice' | 'scale';
+
 export interface User {
   uid: string;
   email: string;
@@ -324,7 +327,7 @@ export type AuthStackParamList = {
 export type OnboardingStackParamList = {
   Welcome: undefined;
   TaskIntro: undefined;
-  Questions: { questionIndex: number };
+  Questions: undefined;
   PersonalizationAnimation: undefined;
   PlanDisplay: undefined;
 };

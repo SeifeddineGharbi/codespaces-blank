@@ -15,7 +15,6 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { 
   getAuth, 
   initializeAuth,
-  getReactNativePersistence,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signOut,
@@ -132,7 +131,6 @@ const initializeFirebase = (): { app: FirebaseApp; auth: Auth; db: Firestore } |
     
     // Initialize services with AsyncStorage persistence
     const auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage)
     });
     const db = getFirestore(app);
     
@@ -151,6 +149,9 @@ if (!firebaseInstance) {
 }
 
 const { app: firebaseApp, auth, db } = firebaseInstance || {};
+
+// Export db for direct use
+export { db };
 
 /**
  * Enhanced error handling for Firebase operations with typed errors

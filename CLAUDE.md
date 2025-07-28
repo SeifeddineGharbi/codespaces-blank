@@ -189,3 +189,24 @@ Comprehensive project documentation available in `/docs/`:
 3. **Only Then Provide:** Testing instructions, expected results, and commit message after confirming app builds successfully
 
 **NEVER ask user to test if `npx expo start --tunnel` shows any errors - test yourself and fix them first!**
+
+## 🚨 CRITICAL IMPORT PATH RULES (Added July 28, 2025)
+
+**BABEL MODULE RESOLVER IS BROKEN** - These aliases DO NOT WORK:
+- ❌ `@/constants` 
+- ❌ `@/types`
+- ❌ `@/services` 
+- ❌ `@/components` (for src/components)
+
+**ALWAYS USE RELATIVE IMPORTS:**
+- ✅ `'../../constants'` 
+- ✅ `'../../types'`
+- ✅ `'../services/firebase'`
+- ✅ `'../../components/onboarding/Component'`
+
+**Exception:** Root components work: `@/components/ui/button` (for components/ui/)
+
+**Before claiming build success:**
+1. Run `npx expo start --tunnel --clear`
+2. Test: `curl "http://localhost:8081/index.bundle?platform=android"`
+3. Verify no "Unable to resolve" errors
