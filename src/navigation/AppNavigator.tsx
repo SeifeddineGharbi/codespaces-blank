@@ -97,7 +97,50 @@ const MainTabNavigator: React.FC = () => {
 
 // Root navigator component
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { 
+    user, 
+    userProfile,
+    loading, 
+    initializing,
+    isAuthenticated,
+    shouldShowOnboarding,
+    shouldShowPaywall,
+    hasActiveSubscription
+  } = useAuth();
+
+  // Determine app state based on user authentication and profile
+  const getAppState = () => {
+    if (initializing || loading) return 'loading';
+    if (!isAuthenticated || !user) return 'unauthenticated';
+    
+    // For authenticated users, check onboarding and subscription status
+    if (!userProfile) {
+      // Profile not loaded yet or user needs onboarding
+      return 'needs_onboarding';
+    }
+    
+    if (shouldShowOnboarding()) {
+      return 'needs_onboarding';
+    }
+    
+    if (shouldShowPaywall()) {
+      return 'needs_subscription';
+    }
+    
+    return 'authenticated';
+  };
+
+  const appState = getAppState();
+  
+  console.log('🧭 App navigation state:', {
+    appState,
+    isAuthenticated,
+    hasUser: !!user,
+    hasProfile: !!userProfile,
+    shouldShowOnboarding: shouldShowOnboarding(),
+    shouldShowPaywall: shouldShowPaywall(),
+    hasActiveSubscription: hasActiveSubscription(),
+  });
 
   return (
     <NavigationContainer>
@@ -108,47 +151,93 @@ const AppNavigator: React.FC = () => {
           gestureEnabled: false, // Disable swipe gestures for security
         }}
       >
-        {loading ? (
-          /* Show splash screen while loading */
-          <RootStack.Screen 
-            name="Splash" 
-            component={SplashScreen}
-          />
-        ) : !isAuthenticated ? (
-          /* Show auth flow when not authenticated */
-          <>
-            <RootStack.Screen 
-              name="Auth" 
-              component={AuthNavigator}
-              options={{
-                animationTypeForReplace: 'push',
-              }}
-            />
-            <RootStack.Screen 
-              name="Onboarding" 
-              component={OnboardingNavigator}
-              options={{
-                animationTypeForReplace: 'push',
-              }}
-            />
-            <RootStack.Screen 
-              name="Paywall" 
-              component={PaywallScreen}
-              options={{
-                animationTypeForReplace: 'push',
-              }}
-            />
-          </>
-        ) : (
-          /* Show main app when authenticated */
-          <RootStack.Screen 
-            name="Main" 
-            component={MainTabNavigator}
-            options={{
-              animationTypeForReplace: 'push',
-            }}
-          />
-        )}
+        {(() => {
+          switch (appState) {
+            case 'loading':
+              return (
+                <RootStack.Screen 
+                  name="Splash" 
+                  component={SplashScreen}
+                />
+              );
+
+            case 'unauthenticated':
+              return (
+                <>
+                  {/* Authentication Flow */}
+                  <RootStack.Screen 
+                    name="Auth" 
+                    component={AuthNavigator}
+                    options={{
+                      animationTypeForReplace: 'push',
+                    }}
+                  />
+                </>
+              );
+
+            case 'needs_onboarding':
+              return (
+                <>
+                  {/* Onboarding Flow - For new users after authentication */}
+                  <RootStack.Screen 
+                    name="Onboarding" 
+                    component={OnboardingNavigator}
+                    options={{
+                      animationTypeForReplace: 'push',
+                    }}
+                  />
+                </>
+              );
+
+            case 'needs_subscription':
+              return (
+                <>
+                  {/* Paywall Flow - After onboarding completion */}
+                  <RootStack.Screen 
+                    name="Paywall" 
+                    component={PaywallScreen}
+                    options={{
+                      animationTypeForReplace: 'push',
+                    }}
+                  />
+                </>
+              );
+
+            case 'authenticated':
+            default:
+              return (
+                <>
+                  {/* Main App for fully authenticated and subscribed users */}
+                  <RootStack.Screen 
+                    name="Main" 
+                    component={MainTabNavigator}
+                    options={{
+                      animationTypeForReplace: 'push',
+                    }}
+                  />
+                  
+                  {/* Modal screens available from main app */}
+                  <RootStack.Screen 
+                    name="Onboarding" 
+                    component={OnboardingNavigator}
+                    options={{
+                      presentation: 'modal',
+                      headerShown: false,
+                    }}
+                  />
+                  
+                  <RootStack.Screen 
+                    name="Paywall" 
+                    component={PaywallScreen}
+                    options={{
+                      presentation: 'modal',
+                      headerShown: false,
+                    }}
+                  />
+                </>
+              );
+          }
+        })()}
       </RootStack.Navigator>
     </NavigationContainer>
   );

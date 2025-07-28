@@ -1,10 +1,172 @@
 // Type definitions for Productivity Morning Routine App
+import { Timestamp } from 'firebase/firestore';
 
 export interface User {
   uid: string;
   email: string;
   displayName?: string;
   photoURL?: string;
+}
+
+// Firestore-specific types with Timestamp support
+export interface FirestoreUserProfile {
+  userId: string;
+  profile: {
+    email: string;
+    displayName?: string;
+    photoURL?: string;
+    timeZone: string;
+    locale: string;
+  };
+  onboarding: {
+    isCompleted: boolean;
+    completedAt?: Timestamp;
+    responses: FirestoreOnboardingResponses;
+  };
+  routine: {
+    wakeTime: string; // "06:00" format
+    workStartTime?: string; // "09:00" format
+    routineDuration: number; // minutes
+    selectedTasks: FirestoreRoutineTask[];
+    customTasks?: FirestoreCustomTask[];
+  };
+  settings: {
+    notifications: {
+      morningReminder: boolean;
+      reminderTime: string; // "05:45" format
+      motivationalQuotes: boolean;
+      weeklyProgress: boolean;
+      streakMilestones: boolean;
+    };
+    privacy: {
+      analyticsOptIn: boolean;
+      crashReportingOptIn: boolean;
+    };
+  };
+  subscription: {
+    status: 'active' | 'cancelled' | 'expired' | 'trial' | 'none';
+    plan?: 'weekly' | 'annual';
+    expiresAt?: Timestamp;
+    isTrialUser: boolean;
+    hasUsedTrial: boolean;
+  };
+  stats: {
+    totalCompletions: number;
+    currentStreak: number;
+    longestStreak: number;
+    averageCompletionScore: number;
+    totalDaysActive: number;
+    joinDate: Timestamp;
+    lastActive: Timestamp;
+    achievements: string[];
+  };
+  metadata: {
+    createdAt: Timestamp;
+    lastUpdated: Timestamp;
+    version: number;
+    deviceInfo?: {
+      platform: 'ios' | 'android';
+      appVersion: string;
+      deviceModel?: string;
+    };
+  };
+}
+
+export interface FirestoreOnboardingResponses {
+  currentWakeTime: string;
+  idealWakeTime?: string;
+  workStartTime?: string;
+  motivations: string[];
+  challenges: string[];
+  experience: 'beginner' | 'intermediate' | 'advanced';
+  goals: string[];
+  // Additional onboarding responses
+  productivityChallenge?: string;
+  workType: 'Employee' | 'Employer' | 'Student' | 'Freelancer';
+  workStyle: 'Office' | 'Remote' | 'Hybrid' | 'Not applicable';
+  bedTimeHabits: string;
+  energySlumps: string;
+  productivityRating: number; // 1-10
+  primaryGoal: string;
+  coffeeHabits: string;
+  socialMediaHabits: string;
+  weekendProductivity: string;
+}
+
+export interface FirestoreRoutineTask {
+  taskId: string;
+  duration: number; // minutes
+  order: number;
+  isEnabled: boolean;
+}
+
+export interface FirestoreCustomTask {
+  id: string;
+  name: string;
+  duration: number;
+  category: string;
+  order: number;
+  isEnabled: boolean;
+}
+
+export interface FirestoreDailyProgress {
+  userId: string;
+  date: string; // YYYY-MM-DD format
+  session: {
+    startTime: Timestamp;
+    endTime?: Timestamp;
+    duration?: number; // actual duration in minutes
+    isCompleted: boolean;
+    completionPercentage: number; // 0-100
+  };
+  tasks: FirestoreTaskCompletion[];
+  metrics: {
+    wakeTime?: string; // "06:15" format - actual wake time
+    energyLevel?: number; // 1-10 scale
+    moodRating?: number; // 1-10 scale
+    difficultyRating?: number; // 1-10 scale
+    motivationLevel?: number; // 1-10 scale
+  };
+  reflection: {
+    dailyReflection?: string;
+    improvements?: string;
+    challenges?: string;
+    wins?: string;
+  };
+  achievements: {
+    newAchievements: string[];
+    milestones: FirestoreMilestone[];
+  };
+  streaks: {
+    currentStreak: number;
+    isStreakDay: boolean;
+    longestStreak: number;
+    lastCompletionDate?: string; // YYYY-MM-DD format
+  };
+  metadata: {
+    createdAt: Timestamp;
+    lastUpdated: Timestamp;
+    dataSource: 'app' | 'sync' | 'manual';
+  };
+}
+
+export interface FirestoreTaskCompletion {
+  taskId: string;
+  name: string;
+  category: string;
+  plannedDuration: number; // minutes
+  actualDuration?: number; // minutes
+  status: 'not_started' | 'in_progress' | 'completed' | 'skipped';
+  startTime?: Timestamp;
+  endTime?: Timestamp;
+  notes?: string;
+  rating?: number; // 1-5 satisfaction rating
+}
+
+export interface FirestoreMilestone {
+  type: 'streak' | 'completion' | 'consistency';
+  value: number;
+  achievedAt: Timestamp;
 }
 
 export interface UserProfile {
@@ -136,55 +298,6 @@ export interface Milestone {
   achievedAt: Date;
 }
 
-// Task definitions for the MVP (4 core habits)
-export interface Task {
-  id: string;
-  name: string;
-  description: string;
-  emoji: string;
-  color: string;
-  category: 'hydration' | 'digital_wellness' | 'health' | 'productivity';
-  order: number;
-}
-
-export const MVP_TASKS: Task[] = [
-  {
-    id: 'drink_water',
-    name: 'Drink Water',
-    description: 'Consume water immediately upon waking',
-    emoji: '💧',
-    color: '#007AFF', // Blue - iOS system blue
-    category: 'hydration',
-    order: 1,
-  },
-  {
-    id: 'no_phone_usage',
-    name: 'No Phone Usage',
-    description: 'Avoid phone usage before getting out of bed',
-    emoji: '⛔',
-    color: '#FF3B30', // Red - iOS system red
-    category: 'digital_wellness',
-    order: 2,
-  },
-  {
-    id: 'sunlight_exposure',
-    name: 'Sunlight Exposure',
-    description: 'Get 5-10 minutes of direct sunlight',
-    emoji: '☀️',
-    color: '#FFCC00', // Yellow - bright sunshine
-    category: 'health',
-    order: 3,
-  },
-  {
-    id: 'elephant_task',
-    name: 'Elephant Task',
-    description: 'Identify THE most important task of the day',
-    emoji: '🐘',
-    color: '#34C759', // Green - iOS system green
-    category: 'productivity',
-    order: 4,
-  },
-];
 
 // Navigation types
 export type RootStackParamList = {
@@ -261,6 +374,8 @@ export interface RegistrationCredentials {
   password: string;
   displayName?: string;
   acceptTerms: boolean;
+  acceptPrivacy: boolean;
+  receiveMarketing?: boolean;
 }
 
 export interface PasswordResetRequest {
@@ -332,7 +447,7 @@ export interface AuthContextType {
 
 export interface TaskContextType {
   dailyProgress: DailyProgress | null;
-  tasks: Task[];
+  tasks: any[];
   loading: boolean;
   submitDay: () => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;

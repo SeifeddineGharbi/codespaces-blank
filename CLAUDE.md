@@ -188,4 +188,4 @@ Comprehensive project documentation available in `/docs/`:
 2. **Ensure Clean Build:** No bundling errors, import errors, or compilation failures allowed
 3. **Only Then Provide:** Testing instructions, expected results, and commit message after confirming app builds successfully
 
-**NEVER ask user to test if `npx expo start --tunnel` shows any errors - fix them first!**
+**NEVER ask user to test if `npx expo start --tunnel` shows any errors - test yourself and fix them first!**

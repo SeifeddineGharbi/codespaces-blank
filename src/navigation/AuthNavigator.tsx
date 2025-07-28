@@ -4,11 +4,14 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
 // Import auth screens
-import WelcomeScreen from '../screens/auth/WelcomeScreen';
-import LoginScreen from '../screens/auth/LoginScreen';
+import WelcomeScreen from '@/src/screens/auth/WelcomeScreen';
+import LoginScreen from '@/src/screens/auth/LoginScreen';
+import RegisterScreen from '@/src/screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '@/src/screens/auth/ForgotPasswordScreen';
 
 // Types
-import { AuthStackParamList } from '../types';
+import { AuthStackParamList } from '@/src/types';
+import { COLORS } from '@/src/constants';
 
 const AuthStack = createStackNavigator<AuthStackParamList>();
 
@@ -30,19 +33,48 @@ const AuthNavigator: React.FC = () => {
             ],
           },
         }),
+        cardStyle: {
+          backgroundColor: COLORS.background.light,
+        },
       }}
       initialRouteName="Welcome"
     >
+      {/* Welcome Screen - Entry point */}
       <AuthStack.Screen 
         name="Welcome" 
         component={WelcomeScreen}
+        options={{
+          animationTypeForReplace: 'push',
+        }}
       />
       
+      {/* Login Screen */}
       <AuthStack.Screen 
         name="Login" 
         component={LoginScreen}
         options={{
           title: 'Sign In',
+          headerBackTitle: 'Back',
+        }}
+      />
+
+      {/* Register Screen */}
+      <AuthStack.Screen 
+        name="Register" 
+        component={RegisterScreen}
+        options={{
+          title: 'Create Account',
+          headerBackTitle: 'Back',
+        }}
+      />
+
+      {/* Forgot Password Screen */}
+      <AuthStack.Screen 
+        name="ForgotPassword" 
+        component={ForgotPasswordScreen}
+        options={{
+          title: 'Reset Password',
+          headerBackTitle: 'Back',
         }}
       />
     </AuthStack.Navigator>

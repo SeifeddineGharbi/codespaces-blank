@@ -14,6 +14,8 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { 
   getAuth, 
+  initializeAuth,
+  getReactNativePersistence,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signOut,
@@ -28,6 +30,7 @@ import {
   User,
   Auth
 } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   getFirestore, 
   collection, 
@@ -127,8 +130,10 @@ const initializeFirebase = (): { app: FirebaseApp; auth: Auth; db: Firestore } |
       console.log('✅ Firebase app already initialized:', app.name);
     }
     
-    // Initialize services
-    const auth = getAuth(app);
+    // Initialize services with AsyncStorage persistence
+    const auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage)
+    });
     const db = getFirestore(app);
     
     return { app, auth, db };
@@ -950,15 +955,133 @@ export const messagingService = {
 };
 
 /**
- * Default export with all Firebase services
+ * Import enhanced database services
+ */
+import { 
+  userProfileService, 
+  dailyProgressService, 
+  batchOperationsService,
+  analyticsService as dbAnalyticsService 
+} from './database';
+import { databaseUtils } from './databaseUtils';
+import { scoringUtils } from './scoring';
+import { 
+  validateUserProfile, 
+  validateDailyProgress, 
+  validateOnboardingResponses,
+  validateTaskCompletions,
+  validateMVPTaskCompletion 
+} from './validation';
+
+/**
+ * Enhanced database service with comprehensive operations
+ */
+export const enhancedDbService = {
+  // Enhanced services
+  userProfile: userProfileService,
+  dailyProgress: dailyProgressService,
+  batchOperations: batchOperationsService,
+  analytics: dbAnalyticsService,
+  
+  // Utilities
+  utils: databaseUtils,
+  scoring: scoringUtils,
+  
+  // Validation functions
+  validate: {
+    userProfile: validateUserProfile,
+    dailyProgress: validateDailyProgress,
+    onboardingResponses: validateOnboardingResponses,
+    taskCompletions: validateTaskCompletions,
+    mvpTaskCompletion: validateMVPTaskCompletion,
+  },
+  
+  // Legacy compatibility
+  user: {
+    createOrUpdate: userProfileService.createUserProfile.bind(userProfileService),
+    get: userProfileService.getUserProfile.bind(userProfileService),
+    listen: userProfileService.listenToUserProfile.bind(userProfileService),
+    delete: async (userId: string) => {
+      // Delete user profile (GDPR compliance)
+      try {
+        if (!db) throw new Error('Firebase Firestore not initialized');
+        const userRef = doc(db, COLLECTIONS.users, userId);
+        await deleteDoc(userRef);
+        console.log('✅ User profile deleted successfully:', userId);
+      } catch (error) {
+        throw handleFirebaseError(error, 'delete user');
+      }
+    },
+  },
+  
+  progress: {
+    createOrUpdate: dailyProgressService.createOrUpdateDailyProgress.bind(dailyProgressService),
+    get: dailyProgressService.getDailyProgress.bind(dailyProgressService),
+    getRange: dailyProgressService.getProgressHistory.bind(dailyProgressService),
+    getRecent: (userId: string, limitCount: number = 30) => 
+      dailyProgressService.getProgressHistory(
+        userId, 
+        databaseUtils.dateTime.getDaysAgo(limitCount), 
+        databaseUtils.dateTime.getTodayString(),
+        { limit: limitCount }
+      ),
+    listenToday: dailyProgressService.listenToDailyProgress.bind(dailyProgressService),
+  },
+  
+  // Convenience methods
+  async getTodayProgress(userId: string) {
+    const today = databaseUtils.dateTime.getTodayString();
+    return await dailyProgressService.getDailyProgress(userId, today);
+  },
+  
+  async updateTaskStatus(userId: string, taskId: string, status: 'not_started' | 'in_progress' | 'completed' | 'skipped', notes?: string) {
+    const today = databaseUtils.dateTime.getTodayString();
+    return await dailyProgressService.updateTaskCompletion(userId, today, taskId, {
+      status,
+      ...(notes ? { notes } : {}),
+      ...(status === 'completed' ? { endTime: serverTimestamp() as Timestamp } : {}),
+      ...(status === 'in_progress' ? { startTime: serverTimestamp() as Timestamp } : {}),
+    });
+  },
+  
+  async submitToday(userId: string, reflection?: any) {
+    const today = databaseUtils.dateTime.getTodayString();
+    return await dailyProgressService.submitCompletedDay(userId, today, reflection);
+  },
+  
+  async getUserAnalytics(userId: string, days: number = 30) {
+    return await dbAnalyticsService.generateUserAnalytics(userId, days);
+  },
+  
+  async backupUserData(userId: string) {
+    return await batchOperationsService.backupUserData(userId);
+  },
+};
+
+/**
+ * Default export with all Firebase services including enhanced database operations
  */
 export default {
   // Core services
   authService,
-  dbService,
+  dbService: enhancedDbService, // Use enhanced service as primary
   analyticsService,
   messagingService,
   firestoreUtils,
+  
+  // Enhanced services
+  enhancedDbService,
+  databaseUtils,
+  scoringUtils,
+  
+  // Validation utilities
+  validation: {
+    validateUserProfile,
+    validateDailyProgress,
+    validateOnboardingResponses,
+    validateTaskCompletions,
+    validateMVPTaskCompletion,
+  },
   
   // Utility functions
   checkFirebaseConnection,

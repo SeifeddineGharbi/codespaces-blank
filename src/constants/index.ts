@@ -356,3 +356,53 @@ export const FEATURE_FLAGS = {
   enableEmailVerification: AUTH_CONFIG.enableEmailVerification,
   debugMode: __DEV__,
 } as const;
+
+// Task definitions for the MVP (4 core habits)
+export interface Task {
+  id: string;
+  name: string;
+  description: string;
+  emoji: string;
+  color: string;
+  category: 'hydration' | 'digital_wellness' | 'health' | 'productivity';
+  order: number;
+}
+
+export const MVP_TASKS: Task[] = [
+  {
+    id: 'drink_water',
+    name: 'Drink Water',
+    description: 'Consume water immediately upon waking',
+    emoji: '💧',
+    color: '#007AFF', // Blue - iOS system blue
+    category: 'hydration',
+    order: 1,
+  },
+  {
+    id: 'no_phone_usage',
+    name: 'No Phone Usage',
+    description: 'Avoid phone usage before getting out of bed',
+    emoji: '⛔',
+    color: '#FF3B30', // Red - iOS system red
+    category: 'digital_wellness',
+    order: 2,
+  },
+  {
+    id: 'sunlight_exposure',
+    name: 'Sunlight Exposure',
+    description: 'Get 5-10 minutes of direct sunlight',
+    emoji: '☀️',
+    color: '#FFCC00', // Yellow - bright sunshine
+    category: 'health',
+    order: 3,
+  },
+  {
+    id: 'elephant_task',
+    name: 'Elephant Task',
+    description: 'Identify THE most important task of the day',
+    emoji: '🐘',
+    color: '#34C759', // Green - iOS system green
+    category: 'productivity',
+    order: 4,
+  },
+];

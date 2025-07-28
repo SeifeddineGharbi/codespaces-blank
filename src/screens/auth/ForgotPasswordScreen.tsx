@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -19,86 +19,100 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { AuthStackParamList } from '@/src/types';
 import { COLORS } from '@/src/constants';
 
-type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
+type ForgotPasswordScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
 // Validation schema
-const loginSchema = yup.object().shape({
+const forgotPasswordSchema = yup.object().shape({
   email: yup
     .string()
     .required('Email is required')
     .email('Please enter a valid email address')
     .lowercase(),
-  password: yup
-    .string()
-    .required('Password is required')
-    .min(6, 'Password must be at least 6 characters long'),
 });
 
-interface LoginFormData {
+interface ForgotPasswordFormData {
   email: string;
-  password: string;
 }
 
-const LoginScreen: React.FC = () => {
-  const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { signIn, loading } = useAuth();
+const ForgotPasswordScreen: React.FC = () => {
+  const navigation = useNavigation<ForgotPasswordScreenNavigationProp>();
+  const { resetPassword } = useAuth();
+  const [emailSent, setEmailSent] = useState(false);
 
   const {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
     setError,
-  } = useForm<LoginFormData>({
-    resolver: yupResolver(loginSchema),
+    getValues,
+  } = useForm<ForgotPasswordFormData>({
+    resolver: yupResolver(forgotPasswordSchema),
     defaultValues: {
       email: '',
-      password: '',
     },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
-      await signIn(data.email, data.password);
-      // Navigation is handled by AppNavigator based on auth state
+      await resetPassword(data.email);
+      setEmailSent(true);
+      Alert.alert(
+        'Password Reset Email Sent', 
+        `We've sent a password reset link to ${data.email}. Please check your email and follow the instructions to reset your password.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Password reset error:', error);
       
       let errorMessage = 'Something went wrong. Please try again.';
-      let fieldError: 'email' | 'password' | null = null;
+      let fieldError: 'email' | null = null;
       
-      if (error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password. Please check your credentials.';
-        fieldError = 'email';
-      } else if (error.code === 'auth/user-not-found') {
+      if (error.code === 'auth/user-not-found') {
         errorMessage = 'No account found with this email address.';
-        fieldError = 'email';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
-        fieldError = 'password';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
-      } else if (error.code === 'auth/user-disabled') {
-        errorMessage = 'This account has been disabled.';
         fieldError = 'email';
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address.';
+        fieldError = 'email';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled.';
         fieldError = 'email';
       }
       
       if (fieldError) {
         setError(fieldError, { message: errorMessage });
       } else {
-        Alert.alert('Login Failed', errorMessage);
+        Alert.alert('Password Reset Failed', errorMessage);
       }
     }
   };
 
-  const handleForgotPassword = () => {
-    navigation.navigate('ForgotPassword');
+  const handleResendEmail = async () => {
+    const email = getValues('email');
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address first.');
+      return;
+    }
+    
+    try {
+      await resetPassword(email);
+      Alert.alert(
+        'Email Sent', 
+        'Password reset email has been sent again. Please check your email.'
+      );
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to send email. Please try again.');
+    }
   };
 
-  const handleCreateAccount = () => {
-    navigation.navigate('Register');
+  const handleBackToLogin = () => {
+    navigation.navigate('Login');
   };
 
   return (
@@ -111,14 +125,14 @@ const LoginScreen: React.FC = () => {
           {/* Header */}
           <VStack className="items-center mb-8">
             <Heading size="2xl" className="text-center mb-2" style={{ color: COLORS.text.primary }}>
-              Welcome Back
+              Reset Password
             </Heading>
             <Text size="md" className="text-center" style={{ color: COLORS.text.secondary }}>
-              Sign in to your account to continue
+              Enter your email address and we'll send you a link to reset your password
             </Text>
           </VStack>
 
-          {/* Login Form */}
+          {/* Reset Password Form */}
           <VStack className="w-full max-w-sm mx-auto" space="md">
             {/* Email Field */}
             <VStack space="xs">
@@ -154,73 +168,64 @@ const LoginScreen: React.FC = () => {
               )}
             </VStack>
 
-            {/* Password Field */}
-            <VStack space="xs">
-              <Text size="sm" className="font-medium" style={{ color: COLORS.text.primary }}>
-                Password
-              </Text>
-              <Controller
-                control={control}
-                name="password"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    variant={errors.password ? 'outline' : 'outline'}
-                    size="md"
-                    className={errors.password ? 'border-red-500' : ''}
-                  >
-                    <InputField
-                      placeholder="Enter your password"
-                      value={value}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      secureTextEntry
-                      autoComplete="current-password"
-                    />
-                  </Input>
-                )}
-              />
-              {errors.password && (
-                <Text size="xs" className="text-red-500">
-                  {errors.password.message}
-                </Text>
-              )}
-            </VStack>
-
-            {/* Forgot Password Link */}
-            <TouchableOpacity onPress={handleForgotPassword} className="self-end">
-              <Text size="sm" style={{ color: COLORS.primary[500] }}>
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
-
-            {/* Sign In Button */}
+            {/* Reset Password Button */}
             <Button
               size="lg"
               variant="solid"
               action="primary"
               onPress={handleSubmit(onSubmit)}
-              isDisabled={loading || isSubmitting}
+              isDisabled={isSubmitting}
               className="mt-2"
               style={{ backgroundColor: COLORS.primary[500] }}
             >
-              {loading || isSubmitting ? (
+              {isSubmitting ? (
                 <ButtonSpinner size="small" />
               ) : null}
               <ButtonText className="font-semibold">
-                {loading || isSubmitting ? 'Signing In...' : 'Sign In'}
+                {isSubmitting ? 'Sending...' : 'Send Reset Link'}
               </ButtonText>
             </Button>
 
-            {/* Create Account Link */}
+            {/* Resend Email Button (only show after first attempt) */}
+            {emailSent && (
+              <VStack className="items-center mt-4" space="xs">
+                <Text size="sm" style={{ color: COLORS.text.secondary }}>
+                  Didn't receive the email?
+                </Text>
+                <TouchableOpacity onPress={handleResendEmail}>
+                  <Text size="sm" className="font-semibold" style={{ color: COLORS.primary[500] }}>
+                    Resend Email
+                  </Text>
+                </TouchableOpacity>
+              </VStack>
+            )}
+
+            {/* Back to Login Link */}
             <VStack className="items-center mt-6" space="xs">
-              <Text size="sm" style={{ color: COLORS.text.secondary }}>
-                Don't have an account?
-              </Text>
-              <TouchableOpacity onPress={handleCreateAccount}>
+              <TouchableOpacity onPress={handleBackToLogin}>
                 <Text size="sm" className="font-semibold" style={{ color: COLORS.primary[500] }}>
-                  Create Account
+                  Back to Sign In
                 </Text>
               </TouchableOpacity>
+            </VStack>
+
+            {/* Instructions */}
+            <VStack className="mt-8 p-4 bg-blue-50 rounded-lg" space="xs">
+              <Text size="sm" className="font-medium" style={{ color: COLORS.text.primary }}>
+                What happens next?
+              </Text>
+              <Text size="xs" style={{ color: COLORS.text.secondary }}>
+                • Check your email inbox (and spam folder)
+              </Text>
+              <Text size="xs" style={{ color: COLORS.text.secondary }}>
+                • Click the reset link in the email
+              </Text>
+              <Text size="xs" style={{ color: COLORS.text.secondary }}>
+                • Create a new password
+              </Text>
+              <Text size="xs" style={{ color: COLORS.text.secondary }}>
+                • Sign in with your new password
+              </Text>
             </VStack>
           </VStack>
         </VStack>
@@ -229,4 +234,4 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-export default LoginScreen;
+export default ForgotPasswordScreen;

@@ -11,38 +11,189 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    // Enhanced user profile validation with comprehensive checks
     function isValidUserProfile(data) {
       return data.keys().hasAll(['userId', 'profile', 'onboarding', 'routine', 'settings', 'subscription', 'stats', 'metadata']) &&
              data.userId == request.auth.uid &&
-             data.profile.email is string &&
-             data.profile.timeZone is string &&
-             data.profile.locale is string &&
-             data.onboarding.isCompleted is bool &&
-             data.routine.wakeTime is string &&
-             data.routine.routineDuration is number &&
-             data.settings.notifications.morningReminder is bool &&
-             data.subscription.status in ['active', 'cancelled', 'expired', 'trial', 'none'] &&
-             data.stats.totalCompletions >= 0 &&
-             data.stats.currentStreak >= 0 &&
-             data.metadata.version is number;
+             isValidProfileSection(data.profile) &&
+             isValidOnboardingSection(data.onboarding) &&
+             isValidRoutineSection(data.routine) &&
+             isValidSettingsSection(data.settings) &&
+             isValidSubscriptionSection(data.subscription) &&
+             isValidStatsSection(data.stats) &&
+             isValidMetadataSection(data.metadata);
     }
     
+    function isValidProfileSection(profile) {
+      return profile.email is string &&
+             profile.email.matches('.*@.*\\..*') &&
+             profile.timeZone is string &&
+             profile.locale is string &&
+             profile.locale.matches('[a-z]{2}(-[A-Z]{2})?');
+    }
+    
+    function isValidOnboardingSection(onboarding) {
+      return onboarding.isCompleted is bool &&
+             (onboarding.isCompleted == false || 
+              (onboarding.responses != null && isValidOnboardingResponses(onboarding.responses)));
+    }
+    
+    function isValidOnboardingResponses(responses) {
+      return responses.currentWakeTime is string &&
+             responses.currentWakeTime.matches('[0-2][0-9]:[0-5][0-9]') &&
+             responses.workType in ['Employee', 'Employer', 'Student', 'Freelancer'] &&
+             responses.workStyle in ['Office', 'Remote', 'Hybrid', 'Not applicable'] &&
+             responses.productivityRating is number &&
+             responses.productivityRating >= 1 &&
+             responses.productivityRating <= 10;
+    }
+    
+    function isValidRoutineSection(routine) {
+      return routine.wakeTime is string &&
+             routine.wakeTime.matches('[0-2][0-9]:[0-5][0-9]') &&
+             routine.routineDuration is number &&
+             routine.routineDuration >= 0 &&
+             routine.routineDuration <= 180 &&
+             routine.selectedTasks is list &&
+             routine.selectedTasks.size() <= 10 &&
+             isValidSelectedTasks(routine.selectedTasks);
+    }
+    
+    function isValidSelectedTasks(tasks) {
+      return tasks.size() > 0 &&
+             tasks.hasAll([
+               {'taskId': 'drink_water', 'order': 1, 'isEnabled': true},
+               {'taskId': 'no_phone_usage', 'order': 2, 'isEnabled': true},
+               {'taskId': 'sunlight_exposure', 'order': 3, 'isEnabled': true},
+               {'taskId': 'elephant_task', 'order': 4, 'isEnabled': true}
+             ]);
+    }
+    
+    function isValidSettingsSection(settings) {
+      return settings.notifications is map &&
+             settings.notifications.morningReminder is bool &&
+             settings.privacy is map &&
+             settings.privacy.analyticsOptIn is bool;
+    }
+    
+    function isValidSubscriptionSection(subscription) {
+      return subscription.status in ['active', 'cancelled', 'expired', 'trial', 'none'] &&
+             subscription.isTrialUser is bool &&
+             subscription.hasUsedTrial is bool &&
+             (subscription.plan == null || subscription.plan in ['weekly', 'annual']);
+    }
+    
+    function isValidStatsSection(stats) {
+      return stats.totalCompletions is number &&
+             stats.currentStreak is number &&
+             stats.longestStreak is number &&
+             stats.averageCompletionScore is number &&
+             stats.totalDaysActive is number &&
+             stats.achievements is list &&
+             stats.totalCompletions >= 0 &&
+             stats.currentStreak >= 0 &&
+             stats.longestStreak >= 0 &&
+             stats.averageCompletionScore >= 0 &&
+             stats.averageCompletionScore <= 100 &&
+             stats.totalDaysActive >= 0;
+    }
+    
+    function isValidMetadataSection(metadata) {
+      return metadata.version is number &&
+             metadata.version >= 1;
+    }
+    
+    // Enhanced daily progress validation with MVP task validation
     function isValidDailyProgress(data) {
       return data.keys().hasAll(['userId', 'date', 'session', 'tasks', 'metadata']) &&
              data.userId == request.auth.uid &&
-             data.date is string &&
-             data.session.isCompleted is bool &&
-             data.session.completionPercentage >= 0 &&
-             data.session.completionPercentage <= 100 &&
-             data.tasks is list &&
-             data.metadata.dataSource in ['app', 'sync', 'manual'];
+             isValidDateFormat(data.date) &&
+             isValidSession(data.session) &&
+             isValidTaskCompletions(data.tasks) &&
+             isValidProgressMetadata(data.metadata);
     }
     
+    function isValidDateFormat(date) {
+      return date is string &&
+             date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}');
+    }
+    
+    function isValidSession(session) {
+      return session.isCompleted is bool &&
+             session.completionPercentage is number &&
+             session.completionPercentage >= 0 &&
+             session.completionPercentage <= 100;
+    }
+    
+    function isValidTaskCompletions(tasks) {
+      return tasks is list &&
+             tasks.size() >= 4 &&
+             hasAllMVPTasks(tasks) &&
+             tasks.hasAll([isValidTaskCompletion]);
+    }
+    
+    function hasAllMVPTasks(tasks) {
+      let mvpTaskIds = ['drink_water', 'no_phone_usage', 'sunlight_exposure', 'elephant_task'];
+      return mvpTaskIds.hasAll([taskId in tasks[].taskId]);
+    }
+    
+    function isValidTaskCompletion(task) {
+      return task.keys().hasAll(['taskId', 'name', 'category', 'plannedDuration', 'status']) &&
+             task.taskId in ['drink_water', 'no_phone_usage', 'sunlight_exposure', 'elephant_task'] &&
+             task.status in ['not_started', 'in_progress', 'completed', 'skipped'] &&
+             task.plannedDuration is number &&
+             task.plannedDuration >= 0 &&
+             task.plannedDuration <= 60 &&
+             isValidMVPTaskSpecific(task);
+    }
+    
+    function isValidMVPTaskSpecific(task) {
+      return (task.taskId == 'drink_water' && isValidWaterTask(task)) ||
+             (task.taskId == 'no_phone_usage' && isValidNoPhoneTask(task)) ||
+             (task.taskId == 'sunlight_exposure' && isValidSunlightTask(task)) ||
+             (task.taskId == 'elephant_task' && isValidElephantTask(task));
+    }
+    
+    function isValidWaterTask(task) {
+      return task.category == 'hydration' &&
+             (task.actualDuration == null || task.actualDuration <= 10);
+    }
+    
+    function isValidNoPhoneTask(task) {
+      return task.category == 'digital_wellness';
+    }
+    
+    function isValidSunlightTask(task) {
+      return task.category == 'health' &&
+             (task.actualDuration == null || task.actualDuration <= 30);
+    }
+    
+    function isValidElephantTask(task) {
+      return task.category == 'productivity' &&
+             (task.status != 'completed' || task.notes != null);
+    }
+    
+    function isValidProgressMetadata(metadata) {
+      return metadata.dataSource in ['app', 'sync', 'manual'];
+    }
+    
+    // Enhanced subscription validation
     function isValidSubscription(data) {
       return data.keys().hasAll(['userId', 'current', 'metadata']) &&
              data.userId == request.auth.uid &&
-             data.current.status in ['active', 'cancelled', 'expired', 'trial', 'none'] &&
-             data.current.autoRenew is bool;
+             isValidCurrentSubscription(data.current);
+    }
+    
+    function isValidCurrentSubscription(current) {
+      return current.status in ['active', 'cancelled', 'expired', 'trial', 'none'] &&
+             current.autoRenew is bool &&
+             isValidTrialInfo(current.trial);
+    }
+    
+    function isValidTrialInfo(trial) {
+      return trial.isTrialUser is bool &&
+             trial.hasUsedTrial is bool &&
+             (trial.isTrialUser == false || trial.trialStartDate != null);
     }
     
     // Users collection - users can only access their own data
