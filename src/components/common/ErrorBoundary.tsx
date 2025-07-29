@@ -23,14 +23,18 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    console.error('❌ ErrorBoundary caught error:', error);
+    if (__DEV__) {
+      console.error('❌ ErrorBoundary caught error:', error.message);
+    }
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('❌ ErrorBoundary componentDidCatch:', error, errorInfo);
-    console.error('❌ Error stack:', error.stack);
-    console.error('❌ Component stack:', errorInfo.componentStack);
+    if (__DEV__) {
+      console.error('❌ ErrorBoundary componentDidCatch:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Component stack:', errorInfo.componentStack);
+    }
   }
 
   handleReset = () => {

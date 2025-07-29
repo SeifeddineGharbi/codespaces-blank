@@ -13,7 +13,7 @@
 // import messaging from '@react-native-firebase/messaging';
 // import { Platform } from 'react-native';
 
-import { FEATURE_FLAGS, NOTIFICATION_CONFIG } from '@/src/constants';
+import { FEATURE_FLAGS, NOTIFICATION_CONFIG } from '../constants';
 import { dbService } from './firebase';
 
 /**

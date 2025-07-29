@@ -11,7 +11,7 @@
 // Phase 2 imports (commented for Phase 1)
 // import analytics from '@react-native-firebase/analytics';
 
-import { FEATURE_FLAGS } from '@/src/constants';
+import { FEATURE_FLAGS } from '../constants';
 import { dbService } from './firebase';
 
 /**

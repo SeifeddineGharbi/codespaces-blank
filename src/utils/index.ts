@@ -1,7 +1,8 @@
 // Utility functions for Productivity Morning Routine App
 
 import { format, startOfWeek, endOfWeek, addDays, parseISO } from 'date-fns';
-import { MOTIVATIONAL_MESSAGES, SCORING_CONFIG } from '@/src/constants';
+import { MOTIVATIONAL_MESSAGES, SCORING_CONFIG } from '../constants';
+import { processFirebaseError } from './errorHandling';
 
 // Date utilities
 export const dateUtils = {
@@ -200,30 +201,13 @@ export const storageUtils = {
 
 // Error handling utilities
 export const errorUtils = {
-  // Get user-friendly error message
+  // Get user-friendly error message using centralized error processing
   getErrorMessage: (error: any): string => {
     if (typeof error === 'string') return error;
     
-    if (error?.code) {
-      switch (error.code) {
-        case 'auth/user-not-found':
-          return 'No account found with this email address.';
-        case 'auth/wrong-password':
-          return 'Incorrect password. Please try again.';
-        case 'auth/email-already-in-use':
-          return 'An account already exists with this email address.';
-        case 'auth/weak-password':
-          return 'Password should be at least 8 characters long.';
-        case 'auth/invalid-email':
-          return 'Please enter a valid email address.';
-        case 'auth/network-request-failed':
-          return 'Network error. Please check your connection.';
-        default:
-          return error.message || 'An unexpected error occurred.';
-      }
-    }
-    
-    return error?.message || 'Something went wrong. Please try again.';
+    // Use centralized Firebase error processing for consistent user-friendly messages
+    const processedError = processFirebaseError(error, 'utils-error-handler');
+    return processedError.message;
   },
 
   // Log error for debugging

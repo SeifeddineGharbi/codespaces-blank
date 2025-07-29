@@ -42,6 +42,8 @@ import { COLLECTIONS, SCORING_CONFIG, MVP_TASKS } from '../constants';
 // Import Firebase directly to avoid circular dependency
 import { getFirestore } from 'firebase/firestore';
 import { initializeApp, getApps, getApp } from 'firebase/app';
+// Import centralized error handling to ensure user-friendly messages
+import { processFirebaseError, handleDatabaseError } from '../utils/errorHandling';
 
 // Firebase configuration from google-services.json
 const firebaseConfig = {
@@ -252,9 +254,10 @@ export class UserProfileService {
 
     } catch (error) {
       console.error('❌ Error creating user profile:', error);
+      const processedError = processFirebaseError(error, 'create-user-profile');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -289,9 +292,10 @@ export class UserProfileService {
 
     } catch (error) {
       console.error('❌ Error retrieving user profile:', error);
+      const processedError = processFirebaseError(error, 'get-user-profile');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -348,9 +352,10 @@ export class UserProfileService {
 
     } catch (error) {
       console.error('❌ Error updating user profile:', error);
+      const processedError = processFirebaseError(error, 'update-user-profile');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -394,9 +399,10 @@ export class UserProfileService {
 
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);
+      const processedError = processFirebaseError(error, 'complete-onboarding');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: 'onboarding/completion-failed'
       };
     }
@@ -426,9 +432,10 @@ export class UserProfileService {
 
     } catch (error) {
       console.error('❌ Error updating subscription:', error);
+      const processedError = processFirebaseError(error, 'update-subscription');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: 'subscription/update-failed'
       };
     }
@@ -457,7 +464,8 @@ export class UserProfileService {
       },
       (error) => {
         console.error('❌ Error listening to user profile:', error);
-        callback(null, error.message);
+        const processedError = processFirebaseError(error, 'listen-user-profile');
+        callback(null, processedError.message);
       }
     );
   }
@@ -551,9 +559,10 @@ export class DailyProgressService {
 
     } catch (error) {
       console.error('❌ Error creating/updating daily progress:', error);
+      const processedError = processFirebaseError(error, 'create-daily-progress');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -590,9 +599,10 @@ export class DailyProgressService {
 
     } catch (error) {
       console.error('❌ Error retrieving daily progress:', error);
+      const processedError = processFirebaseError(error, 'get-daily-progress');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -661,9 +671,10 @@ export class DailyProgressService {
 
     } catch (error) {
       console.error('❌ Error updating task completion:', error);
+      const processedError = processFirebaseError(error, 'update-task-completion');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -702,9 +713,10 @@ export class DailyProgressService {
 
     } catch (error) {
       console.error('❌ Error retrieving progress history:', error);
+      const processedError = processFirebaseError(error, 'get-progress-history');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -790,9 +802,10 @@ export class DailyProgressService {
 
     } catch (error) {
       console.error('❌ Error submitting completed day:', error);
+      const processedError = processFirebaseError(error, 'submit-completed-day');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -826,13 +839,15 @@ export class DailyProgressService {
               }
             })
             .catch(error => {
-              callback(null, error.message);
+              const processedError = processFirebaseError(error, 'listen-user-profile-fetch');
+              callback(null, processedError.message);
             });
         }
       },
       (error) => {
         console.error('❌ Error listening to daily progress:', error);
-        callback(null, error.message);
+        const processedError = processFirebaseError(error, 'listen-daily-progress');
+        callback(null, processedError.message);
       }
     );
   }
@@ -896,9 +911,10 @@ export class BatchOperationsService {
 
     } catch (error) {
       console.error('❌ Error executing batch operations:', error);
+      const processedError = processFirebaseError(error, 'batch-operations');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: (error as FirestoreError)?.code || 'unknown'
       };
     }
@@ -942,9 +958,10 @@ export class BatchOperationsService {
 
     } catch (error) {
       console.error('❌ Error backing up user data:', error);
+      const processedError = processFirebaseError(error, 'backup-user-data');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: 'backup/unknown-error'
       };
     }
@@ -1001,9 +1018,10 @@ export class AnalyticsService {
 
     } catch (error) {
       console.error('❌ Error generating user analytics:', error);
+      const processedError = processFirebaseError(error, 'generate-user-analytics');
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: processedError.message,
         code: 'analytics/generation-failed'
       };
     }

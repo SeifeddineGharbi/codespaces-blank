@@ -3,10 +3,24 @@
 
 import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LogBox } from 'react-native';
 import { GluestackUIProvider } from "./components/ui/gluestack-ui-provider";
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/contexts/AuthContext';
 import ErrorBoundary from './src/components/common/ErrorBoundary';
+
+// Suppress Firebase error notifications in development
+if (__DEV__) {
+  LogBox.ignoreLogs([
+    'Firebase Error',
+    'auth/invalid-credential', 
+    'auth/user-not-found',
+    'auth/wrong-password',
+    'auth/too-many-requests',
+    'Firebase: Error (auth/',
+    'FirebaseError:',
+  ]);
+}
 
 // Import Firebase testing utilities for development
 import { logFirebaseStatus, quickFirebaseCheck } from './src/utils/firebaseTest';

@@ -108,7 +108,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authService.signIn({ email, password, rememberMe: true });
       console.log('✅ Sign in successful');
     } catch (error) {
-      console.error('❌ Sign in failed:', error);
+      if (__DEV__) {
+        console.error('❌ Sign in failed - error code:', (error as any)?.code || 'unknown');
+      }
       throw error;
     } finally {
       setLoading(false);
@@ -186,7 +188,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('✅ Sign up successful');
     } catch (error) {
-      console.error('❌ Sign up failed:', error);
+      if (__DEV__) {
+        console.error('❌ Sign up failed - error code:', (error as any)?.code || 'unknown');
+      }
       throw error;
     } finally {
       setLoading(false);
@@ -201,7 +205,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUserProfile(null);
       console.log('✅ Sign out successful');
     } catch (error) {
-      console.error('❌ Sign out failed:', error);
+      if (__DEV__) {
+        console.error('❌ Sign out failed - error code:', (error as any)?.code || 'unknown');
+      }
       throw error;
     } finally {
       setLoading(false);
@@ -214,7 +220,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authService.resetPassword(email);
       console.log('✅ Password reset email sent');
     } catch (error) {
-      console.error('❌ Password reset failed:', error);
+      if (__DEV__) {
+        console.error('❌ Password reset failed - error code:', (error as any)?.code || 'unknown');
+      }
       throw error;
     }
   };

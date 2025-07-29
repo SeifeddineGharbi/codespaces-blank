@@ -188,7 +188,9 @@ export { db };
 const handleFirebaseError = (error: any, operation: string): AuthError => {
   // Import the centralized error handling utility
   // Note: We avoid circular imports by keeping basic error handling here
-  console.error(`Firebase ${operation} error:`, error);
+  if (__DEV__) {
+    console.error(`Firebase ${operation} error code:`, error?.code || 'unknown');
+  }
   
   const errorCode = error.code || 'unknown';
   

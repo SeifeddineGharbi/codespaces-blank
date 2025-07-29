@@ -87,9 +87,11 @@ const getErrorField = (errorCode: string): 'email' | 'password' | 'confirmPasswo
  * Main function to process Firebase errors into user-friendly format
  */
 export const processFirebaseError = (error: any, context?: string): ProcessedError => {
-  console.error(`Firebase Error in ${context || 'Unknown context'}:`, error);
-  
+  // Only log user-friendly error info, never raw Firebase error objects
   const errorCode = error?.code || 'unknown';
+  if (__DEV__) {
+    console.error(`Auth error in ${context || 'Unknown context'}:`, errorCode);
+  }
   const friendlyMessage = getFirebaseErrorMessage(errorCode);
   const field = getErrorField(errorCode);
   
@@ -183,7 +185,7 @@ export const processFirebaseError = (error: any, context?: string): ProcessedErr
 export const handleAuthError = (
   error: any, 
   context: 'login' | 'register' | 'forgot-password',
-  setError?: (field: string, error: { message: string }) => void,
+  setError?: (field: any, error: { message: string }) => void,
   navigation?: any
 ): void => {
   const processedError = processFirebaseError(error, `auth-${context}`);
@@ -332,7 +334,8 @@ export const createRetryHandler = (
       } catch (error) {
         lastError = error;
         
-        if (!isRetryableError(error?.code) || attempt === maxRetries) {
+        const errorCode = (error as any)?.code || 'unknown';
+        if (!isRetryableError(errorCode) || attempt === maxRetries) {
           throw error;
         }
         
