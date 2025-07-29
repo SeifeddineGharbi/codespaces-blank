@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CommonActions } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +12,7 @@ import { COLORS, MVP_TASKS } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { enhancedDbService } from '../../services/firebase';
 import { serverTimestamp } from 'firebase/firestore';
+import { ErrorAlerts } from '../../components/common/ErrorAlert';
 
 const PlanDisplayScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -93,11 +94,7 @@ const PlanDisplayScreen: React.FC = () => {
 
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);
-      Alert.alert(
-        'Error',
-        'There was an issue saving your plan. Please try again.',
-        [{ text: 'OK', style: 'default' }]
-      );
+      ErrorAlerts.database('There was an issue saving your plan. Please try again.');
     } finally {
       setIsCompleting(false);
     }

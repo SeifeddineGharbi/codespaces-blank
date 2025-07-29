@@ -2,25 +2,20 @@
 
 import React, { useEffect } from 'react';
 import { View, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types';
-import { COLORS } from '../constants';
-
-type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Splash'>;
+import { COLORS } from '../constants/index';
 
 const SplashScreen: React.FC = () => {
-  const navigation = useNavigation<SplashScreenNavigationProp>();
-
   useEffect(() => {
-    // TEMPORARY: Skip directly to Main app for testing
-    // TODO: Add auth state check here and restore full flow
+    // Show splash screen for 2 seconds, then let AppNavigator handle navigation
+    // The AppNavigator will automatically route to the correct screen based on auth state
     const timer = setTimeout(() => {
-      navigation.replace('Main');
+      // Don't navigate manually - let the AppNavigator's auth state logic handle routing
+      // This prevents navigation errors when auth state changes during splash
+      console.log('🚀 Splash screen timer completed - navigation will be handled by AppNavigator');
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, []);
 
   return (
     <View className="flex-1 items-center justify-center" style={{ backgroundColor: COLORS.background.light }}>

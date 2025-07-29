@@ -1,5 +1,5 @@
 import React from 'react';
-import { KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -18,6 +18,7 @@ import { Button, ButtonText, ButtonSpinner } from '@/components/ui/button';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthStackParamList } from '../../types';
 import { COLORS } from '../../constants';
+import { handleAuthError } from '../../utils/errorHandling';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -61,35 +62,8 @@ const LoginScreen: React.FC = () => {
       await signIn(data.email, data.password);
       // Navigation is handled by AppNavigator based on auth state
     } catch (error: any) {
-      console.error('Login error:', error);
-      
-      let errorMessage = 'Something went wrong. Please try again.';
-      let fieldError: 'email' | 'password' | null = null;
-      
-      if (error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password. Please check your credentials.';
-        fieldError = 'email';
-      } else if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
-        fieldError = 'email';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
-        fieldError = 'password';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
-      } else if (error.code === 'auth/user-disabled') {
-        errorMessage = 'This account has been disabled.';
-        fieldError = 'email';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-        fieldError = 'email';
-      }
-      
-      if (fieldError) {
-        setError(fieldError, { message: errorMessage });
-      } else {
-        Alert.alert('Login Failed', errorMessage);
-      }
+      // Use centralized error handling to ensure user-friendly messages
+      handleAuthError(error, 'login', setError, navigation);
     }
   };
 

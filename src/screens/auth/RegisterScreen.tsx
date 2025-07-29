@@ -1,5 +1,5 @@
 import React from 'react';
-import { KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -18,6 +18,8 @@ import { Button, ButtonText, ButtonSpinner } from '@/components/ui/button';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthStackParamList } from '../../types';
 import { COLORS } from '../../constants';
+import { handleAuthError } from '../../utils/errorHandling';
+import { ErrorAlerts } from '../../components/common/ErrorAlert';
 
 type RegisterScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -107,56 +109,20 @@ const RegisterScreen: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
+      console.log('📝 Starting registration process...');
       await signUp(data.email, data.password, data.displayName);
-      Alert.alert(
-        'Account Created!', 
-        'Your account has been created successfully. You can now sign in.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Login'),
-          },
-        ]
-      );
+      
+      console.log('✅ Registration successful - auth state will handle navigation');
+      
+      // Show success message using styled alert
+      ErrorAlerts.accountCreated(() => {
+        console.log('👋 User ready to proceed with onboarding');
+        // Navigation will be handled by AppNavigator based on auth state
+      });
     } catch (error: any) {
-      console.error('Registration error:', error);
-      
-      let errorMessage = 'Something went wrong. Please try again.';
-      let fieldError: 'email' | 'password' | 'displayName' | null = null;
-      
-      if (error.code === 'auth/email-already-in-use') {
-        Alert.alert(
-          'Account Already Exists', 
-          'An account with this email address already exists. Would you like to sign in instead?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Sign In',
-              onPress: () => navigation.navigate('Login'),
-            },
-          ]
-        );
-        return; // Don't set field error, the alert handles it
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please choose a stronger password.';
-        fieldError = 'password';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-        fieldError = 'email';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many requests. Please try again later.';
-      }
-      
-      if (fieldError) {
-        setError(fieldError, { message: errorMessage });
-      } else {
-        Alert.alert('Registration Failed', errorMessage);
-      }
+      console.error('❌ Registration error:', error);
+      // Use centralized error handling to ensure user-friendly messages
+      handleAuthError(error, 'register', setError, navigation);
     }
   };
 

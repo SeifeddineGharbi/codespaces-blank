@@ -1,6 +1,6 @@
 // Main app navigation structure for Productivity Morning Routine
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -108,8 +108,15 @@ const AppNavigator: React.FC = () => {
     hasActiveSubscription
   } = useAuth();
 
+  // Add navigation stability state
+  const [navigationStable, setNavigationStable] = useState(false);
+  const [lastAppState, setLastAppState] = useState<string>('loading');
+  const [splashComplete, setSplashComplete] = useState(false);
+
   // Determine app state based on user authentication and profile
   const getAppState = () => {
+    // Always show splash first, regardless of auth state
+    if (!splashComplete) return 'loading';
     if (initializing || loading) return 'loading';
     if (!isAuthenticated || !user) return 'unauthenticated';
     
@@ -131,9 +138,37 @@ const AppNavigator: React.FC = () => {
   };
 
   const appState = getAppState();
+
+  // Handle splash screen completion
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSplashComplete(true);
+    }, 2500); // 2.5 seconds to match splash screen
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Stabilize navigation state to prevent rapid changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (appState !== lastAppState) {
+        console.log('🧭 App state transition:', lastAppState, '->', appState);
+        setLastAppState(appState);
+      }
+      setNavigationStable(true);
+    }, 300); // 300ms delay to prevent rapid navigation changes
+
+    return () => clearTimeout(timer);
+  }, [appState, lastAppState]);
+
+  // Use stable state for navigation decisions
+  const stableAppState = navigationStable ? appState : lastAppState;
   
   console.log('🧭 App navigation state:', {
-    appState,
+    currentAppState: appState,
+    stableAppState,
+    navigationStable,
+    splashComplete,
     isAuthenticated,
     hasUser: !!user,
     hasProfile: !!userProfile,
@@ -142,17 +177,44 @@ const AppNavigator: React.FC = () => {
     hasActiveSubscription: hasActiveSubscription(),
   });
 
-  return (
-    <NavigationContainer>
-      <StatusBar style="dark" backgroundColor={COLORS.background.white} />
-      <RootStack.Navigator
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: false, // Disable swipe gestures for security
-        }}
+  // Navigation state debugging
+  const onNavigationStateChange = (state: any) => {
+    try {
+      console.log('🧭 Navigation state changed:', JSON.stringify(state, null, 2));
+    } catch (error) {
+      console.error('❌ Error logging navigation state:', error);
+    }
+  };
+
+  const onNavigationReady = () => {
+    console.log('🧭 Navigation container ready');
+  };
+
+  // Error boundary for navigation
+  const handleNavigationError = (error: any) => {
+    console.error('❌ Navigation error caught:', error);
+    console.error('❌ Navigation error stack:', error.stack);
+    // Reset navigation state to prevent infinite loops
+    setNavigationStable(false);
+    setLastAppState('loading');
+  };
+
+  try {
+    return (
+      <NavigationContainer
+        onStateChange={onNavigationStateChange}
+        onReady={onNavigationReady}
+        fallback={<SplashScreen />}
       >
+        <StatusBar style="dark" backgroundColor={COLORS.background.white} />
+        <RootStack.Navigator
+          screenOptions={{
+            headerShown: false,
+            gestureEnabled: false, // Disable swipe gestures for security
+          }}
+        >
         {(() => {
-          switch (appState) {
+          switch (stableAppState) {
             case 'loading':
               return (
                 <RootStack.Screen 
@@ -238,9 +300,15 @@ const AppNavigator: React.FC = () => {
               );
           }
         })()}
-      </RootStack.Navigator>
-    </NavigationContainer>
-  );
+        </RootStack.Navigator>
+      </NavigationContainer>
+    );
+  } catch (error) {
+    console.error('❌ Critical navigation error:', error);
+    handleNavigationError(error);
+    // Return fallback screen on navigation error
+    return <SplashScreen />;
+  }
 };
 
 export default AppNavigator;

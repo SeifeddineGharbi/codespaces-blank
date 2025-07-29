@@ -183,26 +183,62 @@ export { db };
 
 /**
  * Enhanced error handling for Firebase operations with typed errors
+ * This function now uses the centralized error handling utility
  */
 const handleFirebaseError = (error: any, operation: string): AuthError => {
+  // Import the centralized error handling utility
+  // Note: We avoid circular imports by keeping basic error handling here
   console.error(`Firebase ${operation} error:`, error);
   
   const errorCode = error.code || 'unknown';
-  const errorMessage = ERROR_MESSAGES.auth[errorCode as keyof typeof ERROR_MESSAGES.auth] || 
-                      ERROR_MESSAGES.firestore[errorCode as keyof typeof ERROR_MESSAGES.firestore] || 
-                      ERROR_MESSAGES.unknown;
+  
+  // Use the same logic as the centralized error handler but return AuthError format
+  let errorMessage: string;
+  
+  // Check auth errors first
+  if (ERROR_MESSAGES.auth[errorCode as keyof typeof ERROR_MESSAGES.auth]) {
+    errorMessage = ERROR_MESSAGES.auth[errorCode as keyof typeof ERROR_MESSAGES.auth];
+  }
+  // Check firestore errors
+  else if (ERROR_MESSAGES.firestore[errorCode as keyof typeof ERROR_MESSAGES.firestore]) {
+    errorMessage = ERROR_MESSAGES.firestore[errorCode as keyof typeof ERROR_MESSAGES.firestore];
+  }
+  // Check network errors
+  else if (ERROR_MESSAGES.network[errorCode as keyof typeof ERROR_MESSAGES.network]) {
+    errorMessage = ERROR_MESSAGES.network[errorCode as keyof typeof ERROR_MESSAGES.network];
+  }
+  // Check subscription errors
+  else if (ERROR_MESSAGES.subscription[errorCode as keyof typeof ERROR_MESSAGES.subscription]) {
+    errorMessage = ERROR_MESSAGES.subscription[errorCode as keyof typeof ERROR_MESSAGES.subscription];
+  }
+  // Fallback for unknown errors
+  else {
+    errorMessage = ERROR_MESSAGES.unknown;
+  }
   
   // Determine if error is retryable
   const retryableErrors = [
     'auth/network-request-failed',
     'auth/timeout',
-    'firestore/unavailable'
+    'firestore/unavailable',
+    'network/no-connection',
+    'network/timeout'
   ];
   
   // Determine field association for form errors
   let field: 'email' | 'password' | 'confirmPassword' | 'displayName' | undefined;
-  if (errorCode.includes('email')) field = 'email';
-  else if (errorCode.includes('password')) field = 'password';
+  if (errorCode.includes('email') || 
+      errorCode === 'auth/user-not-found' || 
+      errorCode === 'auth/user-disabled' ||
+      errorCode === 'auth/invalid-credential') {
+    field = 'email';
+  } else if (errorCode.includes('password') || 
+             errorCode === 'auth/weak-password' ||
+             errorCode === 'auth/wrong-password') {
+    field = 'password';
+  } else if (errorCode.includes('display-name') || errorCode.includes('name')) {
+    field = 'displayName';
+  }
   
   return {
     code: errorCode,

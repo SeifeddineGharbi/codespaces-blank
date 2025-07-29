@@ -1,10 +1,11 @@
 // Paywall screen placeholder
 
 import React, { useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import { COLORS } from '../../constants';
 import { Button, ButtonText } from '../../../components/ui/button';
 import { useAuth } from '../../contexts/AuthContext';
+import { ErrorAlerts } from '../../components/common/ErrorAlert';
 
 const PaywallScreen: React.FC = () => {
   const { signOut } = useAuth();
@@ -19,7 +20,7 @@ const PaywallScreen: React.FC = () => {
       // User will be automatically redirected to login screen via AuthContext
     } catch (error) {
       console.error('Error signing out:', error);
-      Alert.alert('Error', 'Failed to sign out. Please try again.');
+      ErrorAlerts.generic('Failed to sign out. Please try again.', 'Sign Out Error');
     } finally {
       setIsSigningOut(false);
     }

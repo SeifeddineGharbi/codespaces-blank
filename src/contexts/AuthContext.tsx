@@ -48,34 +48,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('🔥 Setting up Firebase auth state listener...');
     
     const unsubscribe = authService.onAuthStateChanged(async (firebaseUser) => {
-      console.log('🔥 Auth state changed:', firebaseUser ? 'User signed in' : 'User signed out');
-      
-      setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        // User is signed in, fetch their profile
-        try {
-          console.log('👤 Fetching user profile for:', firebaseUser.uid);
-          const profileResult = await enhancedDbService.userProfile.getUserProfile(firebaseUser.uid);
-          
-          if (profileResult.success && profileResult.data) {
-            console.log('✅ User profile loaded successfully');
-            setUserProfile(profileResult.data as any);
-          } else {
-            console.log('ℹ️ No user profile found:', profileResult.error || 'Unknown error');
-            console.log('ℹ️ User may need onboarding or profile creation');
+      try {
+        console.log('🔥 Auth state changed:', firebaseUser ? 'User signed in' : 'User signed out');
+        console.log('🔥 Auth state details:', {
+          uid: firebaseUser?.uid,
+          email: firebaseUser?.email,
+          emailVerified: firebaseUser?.emailVerified,
+          displayName: firebaseUser?.displayName,
+        });
+        
+        setUser(firebaseUser);
+        
+        if (firebaseUser) {
+          // User is signed in, fetch their profile
+          try {
+            console.log('👤 Fetching user profile for:', firebaseUser.uid);
+            const profileResult = await enhancedDbService.userProfile.getUserProfile(firebaseUser.uid);
+            
+            if (profileResult.success && profileResult.data) {
+              console.log('✅ User profile loaded successfully');
+              console.log('👤 Profile state:', {
+                hasOnboarding: !!profileResult.data.onboarding,
+                isOnboardingCompleted: profileResult.data.onboarding?.isCompleted,
+                hasSubscription: !!profileResult.data.subscription,
+                subscriptionStatus: profileResult.data.subscription?.status,
+              });
+              setUserProfile(profileResult.data as any);
+            } else {
+              console.log('ℹ️ No user profile found:', profileResult.error || 'Unknown error');
+              console.log('ℹ️ User may need onboarding or profile creation');
+              setUserProfile(null);
+            }
+          } catch (error) {
+            console.error('❌ Error fetching user profile:', error);
             setUserProfile(null);
           }
-        } catch (error) {
-          console.error('❌ Error fetching user profile:', error);
+        } else {
+          // User is signed out
           setUserProfile(null);
         }
-      } else {
-        // User is signed out
-        setUserProfile(null);
+        
+        setInitializing(false);
+      } catch (error) {
+        console.error('❌ Critical error in auth state listener:', error);
+        setInitializing(false);
       }
-      
-      setInitializing(false);
     });
 
     return () => {
@@ -224,13 +241,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Navigation helper methods
   const shouldShowOnboarding = (): boolean => {
-    if (!user || !userProfile) return false;
+    if (!user) return false;
+    // If user exists but no profile loaded yet, assume they need onboarding (new user)
+    if (!userProfile) return true;
     // Handle case where onboarding property might be undefined
     return !userProfile.onboarding?.isCompleted;
   };
 
   const shouldShowPaywall = (): boolean => {
-    if (!user || !userProfile) return false;
+    if (!user) return false;
+    // If user exists but no profile loaded yet, don't show paywall (they need onboarding first)
+    if (!userProfile) return false;
     // Handle case where subscription property might be undefined
     const subscription = userProfile.subscription;
     if (!subscription) return true; // Default to showing paywall if no subscription info

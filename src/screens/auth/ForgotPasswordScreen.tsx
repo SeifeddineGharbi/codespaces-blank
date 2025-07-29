@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -18,6 +18,8 @@ import { Button, ButtonText, ButtonSpinner } from '@/components/ui/button';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthStackParamList } from '../../types';
 import { COLORS } from '../../constants';
+import { handleAuthError } from '../../utils/errorHandling';
+import { ErrorAlerts } from '../../components/common/ErrorAlert';
 
 type ForgotPasswordScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
@@ -56,58 +58,34 @@ const ForgotPasswordScreen: React.FC = () => {
     try {
       await resetPassword(data.email);
       setEmailSent(true);
-      Alert.alert(
-        'Password Reset Email Sent', 
-        `We've sent a password reset link to ${data.email}. Please check your email and follow the instructions to reset your password.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Login'),
-          },
-        ]
-      );
+      
+      // Show success message using styled alert
+      ErrorAlerts.passwordResetSent(data.email, () => {
+        navigation.navigate('Login');
+      });
     } catch (error: any) {
       console.error('Password reset error:', error);
-      
-      let errorMessage = 'Something went wrong. Please try again.';
-      let fieldError: 'email' | null = null;
-      
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
-        fieldError = 'email';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-        fieldError = 'email';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many requests. Please try again later.';
-      } else if (error.code === 'auth/user-disabled') {
-        errorMessage = 'This account has been disabled.';
-        fieldError = 'email';
-      }
-      
-      if (fieldError) {
-        setError(fieldError, { message: errorMessage });
-      } else {
-        Alert.alert('Password Reset Failed', errorMessage);
-      }
+      // Use centralized error handling to ensure user-friendly messages
+      handleAuthError(error, 'forgot-password', setError, navigation);
     }
   };
 
   const handleResendEmail = async () => {
     const email = getValues('email');
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address first.');
+      ErrorAlerts.validation('Please enter your email address first.');
       return;
     }
     
     try {
       await resetPassword(email);
-      Alert.alert(
-        'Email Sent', 
-        'Password reset email has been sent again. Please check your email.'
+      ErrorAlerts.generic(
+        'Password reset email has been sent again. Please check your email.',
+        'Email Sent'
       );
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to send email. Please try again.');
+      // Use centralized error handling
+      handleAuthError(error, 'forgot-password', setError, navigation);
     }
   };
 

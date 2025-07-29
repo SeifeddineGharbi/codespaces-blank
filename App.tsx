@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GluestackUIProvider } from "./components/ui/gluestack-ui-provider";
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/contexts/AuthContext';
+import ErrorBoundary from './src/components/common/ErrorBoundary';
 
 // Import Firebase testing utilities for development
 import { logFirebaseStatus, quickFirebaseCheck } from './src/utils/firebaseTest';
@@ -44,12 +45,18 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <GluestackUIProvider mode="light">
-        <AuthProvider>
-          <AppNavigator />
-        </AuthProvider>
-      </GluestackUIProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <GluestackUIProvider mode="light">
+          <ErrorBoundary>
+            <AuthProvider>
+              <ErrorBoundary>
+                <AppNavigator />
+              </ErrorBoundary>
+            </AuthProvider>
+          </ErrorBoundary>
+        </GluestackUIProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
