@@ -11,7 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS, MVP_TASKS } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { enhancedDbService } from '../../services/firebase';
-import { Timestamp } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
 
 const PlanDisplayScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -37,14 +37,53 @@ const PlanDisplayScreen: React.FC = () => {
     setIsCompleting(true);
     
     try {
-      // Mark onboarding as completed
-      await enhancedDbService.userProfile.updateUserProfile(user.uid, {
-        onboarding: {
-          isCompleted: true,
-          completedAt: Timestamp.now(),
-          responses: {} as any, // This will be updated with actual onboarding responses in real implementation
+      console.log('🚀 Starting onboarding completion for user:', user.uid);
+      
+      // First check if profile exists, if not create it
+      const profileResult = await enhancedDbService.userProfile.getUserProfile(user.uid);
+      
+      if (!profileResult.success || !profileResult.data) {
+        console.log('👤 Profile not found, creating new profile...');
+        
+        // Create initial profile first
+        const createResult = await enhancedDbService.userProfile.createUserProfile(user.uid, {
+          profile: {
+            email: user.email || '',
+            displayName: user.displayName || user.email?.split('@')[0] || 'User',
+            photoURL: user.photoURL || undefined, // Explicitly handle photoURL - keep as undefined, sanitization will handle it
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            locale: 'en-US',
+          },
+          onboarding: {
+            isCompleted: true,
+            completedAt: serverTimestamp(),
+            responses: {} as any, // This will be updated with actual onboarding responses in real implementation
+          },
+        });
+        
+        if (!createResult.success) {
+          throw new Error(`Failed to create profile: ${createResult.error}`);
         }
-      });
+        
+        console.log('✅ Profile created successfully');
+      } else {
+        console.log('🔄 Profile exists, updating with onboarding completion...');
+        
+        // Profile exists, update it with onboarding completion
+        const updateResult = await enhancedDbService.userProfile.updateUserProfile(user.uid, {
+          onboarding: {
+            isCompleted: true,
+            completedAt: serverTimestamp(),
+            responses: {} as any, // This will be updated with actual onboarding responses in real implementation
+          }
+        });
+        
+        if (!updateResult.success) {
+          throw new Error(`Failed to update profile: ${updateResult.error}`);
+        }
+        
+        console.log('✅ Profile updated successfully');
+      }
 
       // Refresh profile to trigger navigation flow
       await refreshProfile();
@@ -53,7 +92,7 @@ const PlanDisplayScreen: React.FC = () => {
       console.log('✅ Onboarding completed, AppNavigator will handle navigation');
 
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.error('❌ Error completing onboarding:', error);
       Alert.alert(
         'Error',
         'There was an issue saving your plan. Please try again.',

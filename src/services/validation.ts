@@ -178,11 +178,28 @@ export const fieldValidators = {
    * Validate Firestore timestamp
    */
   timestamp: (value: any): FieldValidationResult => {
-    if (!(value instanceof Timestamp)) {
-      return { isValid: false, error: 'Value must be a Firestore Timestamp' };
+    // Handle serverTimestamp() sentinel values during creation
+    // These have a specific structure with _methodName property (Firebase v9+)
+    if (value && typeof value === 'object' && (
+        value._methodName === 'serverTimestamp' || 
+        value.methodName === 'serverTimestamp' || 
+        value.constructor?.name?.includes('FieldValue') ||
+        value.constructor?.name?.includes('ServerTimestamp') ||
+        (typeof value.toDate !== 'function' && value.toString?.().includes('ServerTimestamp')))) {
+      return { isValid: true };
     }
     
-    return { isValid: true };
+    // Handle regular Timestamp instances
+    if (value instanceof Timestamp) {
+      return { isValid: true };
+    }
+    
+    // Handle null/undefined for optional timestamps
+    if (value === null || value === undefined) {
+      return { isValid: true };
+    }
+    
+    return { isValid: false, error: 'Value must be a Firestore Timestamp' };
   },
 
   /**

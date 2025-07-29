@@ -64,6 +64,55 @@ import {
 } from './validation';
 import { calculateDailyScore, scoringUtils } from './scoring';
 
+/**
+ * Firestore Data Sanitization Utilities
+ * Firestore doesn't support undefined values - convert to null or omit entirely
+ * IMPORTANT: Preserve Firebase FieldValue objects like serverTimestamp()
+ */
+const sanitizeForFirestore = (data: any): any => {
+  if (data === null || data === undefined) {
+    return null;
+  }
+  
+  // Preserve Firebase FieldValue objects (serverTimestamp, arrayUnion, etc.)
+  if (data && typeof data === 'object' && (
+    // Check for serverTimestamp() sentinel value (Firebase v9+ format)
+    data._methodName === 'serverTimestamp' ||
+    // Check for legacy format
+    data.methodName === 'serverTimestamp' ||
+    // Check for other Firebase FieldValue methods
+    data.constructor?.name?.includes('FieldValue') ||
+    data.constructor?.name?.includes('ServerTimestamp') ||
+    // Check for Firebase internal structure
+    (typeof data.toDate !== 'function' && data.toString?.().includes('ServerTimestamp'))
+  )) {
+    return data;
+  }
+  
+  // Preserve actual Timestamp instances
+  if (data instanceof Timestamp) {
+    return data;
+  }
+  
+  if (Array.isArray(data)) {
+    return data.map(sanitizeForFirestore);
+  }
+  
+  if (typeof data === 'object' && data !== null) {
+    const sanitized: any = {};
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+      if (value !== undefined) {
+        sanitized[key] = sanitizeForFirestore(value);
+      }
+      // If value is undefined, we omit it from the sanitized object
+    });
+    return sanitized;
+  }
+  
+  return data;
+};
+
 // Database operation interfaces
 export interface DatabaseResult<T> {
   success: boolean;
@@ -168,21 +217,24 @@ export class UserProfileService {
           longestStreak: 0,
           averageCompletionScore: 0,
           totalDaysActive: 0,
-          joinDate: serverTimestamp() as Timestamp,
-          lastActive: serverTimestamp() as Timestamp,
+          joinDate: serverTimestamp(),
+          lastActive: serverTimestamp(),
           achievements: [],
           ...profileData.stats
         },
         metadata: {
-          createdAt: serverTimestamp() as Timestamp,
-          lastUpdated: serverTimestamp() as Timestamp,
+          createdAt: serverTimestamp(),
+          lastUpdated: serverTimestamp(),
           version: 1,
           deviceInfo: profileData.metadata?.deviceInfo,
         }
       };
 
+      // Sanitize the complete profile for Firestore (remove undefined values)
+      const sanitizedProfile = sanitizeForFirestore(completeProfile);
+
       // Validate the complete profile
-      const validation = validateUserProfile(completeProfile);
+      const validation = validateUserProfile(sanitizedProfile);
       if (!validation.isValid) {
         return { 
           success: false, 
@@ -193,7 +245,7 @@ export class UserProfileService {
 
       // Create the document
       const userRef = doc(db, COLLECTIONS.users, userId);
-      await setDoc(userRef, completeProfile);
+      await setDoc(userRef, sanitizedProfile);
 
       console.log('✅ User profile created successfully:', userId);
       return { success: true, data: completeProfile };
@@ -273,18 +325,21 @@ export class UserProfileService {
           metadata: {
             ...currentData.metadata,
             ...updates.metadata,
-            lastUpdated: serverTimestamp() as Timestamp,
+            lastUpdated: serverTimestamp(),
             version: (currentData.metadata.version || 1) + 1
           }
         };
 
+        // Sanitize the updated data for Firestore (remove undefined values)
+        const sanitizedData = sanitizeForFirestore(updatedData);
+
         // Validate updated data
-        const validation = validateUserProfile(updatedData);
+        const validation = validateUserProfile(sanitizedData);
         if (!validation.isValid) {
           throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
         }
 
-        transaction.update(userRef, updatedData as any);
+        transaction.update(userRef, sanitizedData as any);
         return updatedData;
       });
 
@@ -319,7 +374,7 @@ export class UserProfileService {
       const updates: Partial<FirestoreUserProfile> = {
         onboarding: {
           isCompleted: true,
-          completedAt: serverTimestamp() as Timestamp,
+          completedAt: serverTimestamp(),
           responses
         },
         routine: {
@@ -444,7 +499,7 @@ export class DailyProgressService {
         userId,
         date,
         session: {
-          startTime: serverTimestamp() as Timestamp,
+          startTime: serverTimestamp(),
           isCompleted: false,
           completionPercentage: 0,
           ...progressData.session
@@ -462,8 +517,8 @@ export class DailyProgressService {
           longestStreak: 0
         },
         metadata: {
-          createdAt: serverTimestamp() as Timestamp,
-          lastUpdated: serverTimestamp() as Timestamp,
+          createdAt: serverTimestamp(),
+          lastUpdated: serverTimestamp(),
           dataSource: 'app',
           ...progressData.metadata
         }
@@ -474,8 +529,11 @@ export class DailyProgressService {
       completeProgress.session.completionPercentage = dailyScore.percentage;
       completeProgress.session.isCompleted = dailyScore.percentage >= SCORING_CONFIG.passingScore;
 
+      // Sanitize the progress data for Firestore (remove undefined values)
+      const sanitizedProgress = sanitizeForFirestore(completeProgress);
+
       // Validate the progress data
-      const validation = validateDailyProgress(completeProgress);
+      const validation = validateDailyProgress(sanitizedProgress);
       if (!validation.isValid) {
         return { 
           success: false, 
@@ -486,7 +544,7 @@ export class DailyProgressService {
 
       // Save to Firestore
       const progressRef = doc(db, COLLECTIONS.userProgress, userId, 'daily_entries', date);
-      await setDoc(progressRef, completeProgress, { merge: true });
+      await setDoc(progressRef, sanitizedProgress, { merge: true });
 
       console.log('✅ Daily progress created/updated successfully:', userId, date);
       return { success: true, data: completeProgress };
@@ -577,8 +635,8 @@ export class DailyProgressService {
         progressData.tasks[taskIndex] = {
           ...progressData.tasks[taskIndex],
           ...updates,
-          ...(updates.status === 'completed' && !updates.endTime ? { endTime: serverTimestamp() as Timestamp } : {}),
-          ...(updates.status === 'in_progress' && !updates.startTime ? { startTime: serverTimestamp() as Timestamp } : {})
+          ...(updates.status === 'completed' && !updates.endTime ? { endTime: serverTimestamp() } : {}),
+          ...(updates.status === 'in_progress' && !updates.startTime ? { startTime: serverTimestamp() } : {})
         };
 
         // Recalculate completion percentage
@@ -588,11 +646,11 @@ export class DailyProgressService {
         
         // Update session end time if all tasks are completed
         if (progressData.tasks.every(task => task.status === 'completed' || task.status === 'skipped')) {
-          progressData.session.endTime = serverTimestamp() as Timestamp;
+          progressData.session.endTime = serverTimestamp();
         }
 
         // Update metadata
-        progressData.metadata.lastUpdated = serverTimestamp() as Timestamp;
+        progressData.metadata.lastUpdated = serverTimestamp();
 
         transaction.set(progressRef, progressData, { merge: true });
         return progressData;
@@ -687,7 +745,7 @@ export class DailyProgressService {
 
         // Update progress with final data
         progressData.session.isCompleted = true;
-        progressData.session.endTime = serverTimestamp() as Timestamp;
+        progressData.session.endTime = serverTimestamp();
         progressData.session.completionPercentage = dailyScore.percentage;
         
         if (reflection) {
@@ -717,8 +775,8 @@ export class DailyProgressService {
         userData.stats.totalDaysActive += 1;
         userData.stats.averageCompletionScore = 
           ((userData.stats.averageCompletionScore * (userData.stats.totalCompletions - 1)) + dailyScore.percentage) / userData.stats.totalCompletions;
-        userData.stats.lastActive = serverTimestamp() as Timestamp;
-        userData.metadata.lastUpdated = serverTimestamp() as Timestamp;
+        userData.stats.lastActive = serverTimestamp();
+        userData.metadata.lastUpdated = serverTimestamp();
 
         // Update both documents
         transaction.set(progressRef, progressData, { merge: true });
