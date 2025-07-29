@@ -12,7 +12,7 @@
 import { getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, deleteDoc, serverTimestamp, collection } from 'firebase/firestore';
-import { checkFirebaseConnection } from '@/src/services/firebase';
+import { checkFirebaseConnection } from '../services/firebase';
 
 /**
  * Comprehensive Firebase connection test

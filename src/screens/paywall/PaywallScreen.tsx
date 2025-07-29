@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { View, Text } from 'react-native';
-import { COLORS } from '@/src/constants';
+import { COLORS } from '../../constants';
 
 const PaywallScreen: React.FC = () => {
   return (

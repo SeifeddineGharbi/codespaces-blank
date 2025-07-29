@@ -39,7 +39,23 @@ import {
   FirestoreOnboardingResponses
 } from '../types';
 import { COLLECTIONS, SCORING_CONFIG, MVP_TASKS } from '../constants';
-import { db } from './firebase';
+// Import Firebase directly to avoid circular dependency
+import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+
+// Firebase configuration from google-services.json
+const firebaseConfig = {
+  apiKey: "AIzaSyCEhFxLTUamzuJZKRYnZAX07yI7f1p_-IQ",
+  authDomain: "productivity-morning-routine.firebaseapp.com",
+  projectId: "productivity-morning-routine",
+  storageBucket: "productivity-morning-routine.firebasestorage.app",
+  messagingSenderId: "197877248013",
+  appId: "1:197877248013:android:9a310e006c16304489e544"
+};
+
+// Initialize Firebase app if not already initialized
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
 import { 
   validateUserProfile, 
   validateDailyProgress, 

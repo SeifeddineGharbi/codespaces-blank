@@ -5,8 +5,8 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from 'firebase/auth';
-import { authService, enhancedDbService } from '@/src/services/firebase';
-import { UserProfile } from '@/src/types';
+import { authService, enhancedDbService } from '../services/firebase';
+import { UserProfile } from '../types';
 
 interface AuthContextType {
   // Core state

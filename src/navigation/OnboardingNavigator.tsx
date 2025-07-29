@@ -4,14 +4,14 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
 // Import onboarding screens (placeholder imports - screens will be created by other agents)
-import OnboardingWelcomeScreen from '@/src/screens/onboarding/OnboardingWelcomeScreen';
-import TaskIntroScreen from '@/src/screens/onboarding/TaskIntroScreen';
-import OnboardingQuestionsScreen from '@/src/screens/onboarding/OnboardingQuestionsScreen';
-import PersonalizationAnimationScreen from '@/src/screens/onboarding/PersonalizationAnimationScreen';
-import PlanDisplayScreen from '@/src/screens/onboarding/PlanDisplayScreen';
+import OnboardingWelcomeScreen from '../screens/onboarding/OnboardingWelcomeScreen';
+import TaskIntroScreen from '../screens/onboarding/TaskIntroScreen';
+import OnboardingQuestionsScreen from '../screens/onboarding/OnboardingQuestionsScreen';
+import PersonalizationAnimationScreen from '../screens/onboarding/PersonalizationAnimationScreen';
+import PlanDisplayScreen from '../screens/onboarding/PlanDisplayScreen';
 
 // Types
-import { OnboardingStackParamList } from '@/src/types';
+import { OnboardingStackParamList } from '../types';
 
 const OnboardingStack = createStackNavigator<OnboardingStackParamList>();
 

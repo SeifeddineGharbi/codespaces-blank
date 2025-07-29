@@ -12,8 +12,8 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { Center } from '@/components/ui/center';
 
 // Import context and types
-import { AuthStackParamList } from '@/src/types';
-import { COLORS, APP_CONFIG } from '@/src/constants';
+import { AuthStackParamList } from '../../types';
+import { COLORS, APP_CONFIG } from '../../constants';
 
 type WelcomeScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Welcome'>;
 

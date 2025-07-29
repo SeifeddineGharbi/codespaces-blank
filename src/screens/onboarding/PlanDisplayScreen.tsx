@@ -49,13 +49,8 @@ const PlanDisplayScreen: React.FC = () => {
       // Refresh profile to trigger navigation flow
       await refreshProfile();
 
-      // Navigate to root to trigger auth flow re-evaluation
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Auth' as never }],
-        })
-      );
+      // The AppNavigator will automatically detect the state change and navigate to paywall
+      console.log('✅ Onboarding completed, AppNavigator will handle navigation');
 
     } catch (error) {
       console.error('Error completing onboarding:', error);

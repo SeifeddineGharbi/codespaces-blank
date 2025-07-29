@@ -15,9 +15,9 @@ import { Input, InputField } from '@/components/ui/input';
 import { Button, ButtonText, ButtonSpinner } from '@/components/ui/button';
 
 // Import context and types
-import { useAuth } from '@/src/contexts/AuthContext';
-import { AuthStackParamList } from '@/src/types';
-import { COLORS } from '@/src/constants';
+import { useAuth } from '../../contexts/AuthContext';
+import { AuthStackParamList } from '../../types';
+import { COLORS } from '../../constants';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 

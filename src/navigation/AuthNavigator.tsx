@@ -4,14 +4,14 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
 // Import auth screens
-import WelcomeScreen from '@/src/screens/auth/WelcomeScreen';
-import LoginScreen from '@/src/screens/auth/LoginScreen';
-import RegisterScreen from '@/src/screens/auth/RegisterScreen';
-import ForgotPasswordScreen from '@/src/screens/auth/ForgotPasswordScreen';
+import WelcomeScreen from '../screens/auth/WelcomeScreen';
+import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 
 // Types
-import { AuthStackParamList } from '@/src/types';
-import { COLORS } from '@/src/constants';
+import { AuthStackParamList } from '../types';
+import { COLORS } from '../constants';
 
 const AuthStack = createStackNavigator<AuthStackParamList>();
 

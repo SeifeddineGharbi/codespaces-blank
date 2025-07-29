@@ -9,22 +9,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 
 // Import screens (placeholder imports - screens will be created by other agents)
-import SplashScreen from '@/src/screens/SplashScreen';
+import SplashScreen from '../screens/SplashScreen';
 import AuthNavigator from './AuthNavigator';
 import OnboardingNavigator from './OnboardingNavigator';
-import PaywallScreen from '@/src/screens/paywall/PaywallScreen';
+import PaywallScreen from '../screens/paywall/PaywallScreen';
 
 // Tab screens
-import AnalyticsScreen from '@/src/screens/main/AnalyticsScreen';
-import TasksScreen from '@/src/screens/main/TasksScreen';
-import SettingsScreen from '@/src/screens/main/SettingsScreen';
+import AnalyticsScreen from '../screens/main/AnalyticsScreen';
+import TasksScreen from '../screens/main/TasksScreen';
+import SettingsScreen from '../screens/main/SettingsScreen';
 
 // Types
-import { RootStackParamList, MainTabParamList } from '@/src/types';
+import { RootStackParamList, MainTabParamList } from '../types';
 
 // Icons for tab navigation (using Expo vector icons)
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@/src/constants';
+import { COLORS } from '../constants';
 
 const RootStack = createStackNavigator<RootStackParamList>();
 const MainTabs = createBottomTabNavigator<MainTabParamList>();
