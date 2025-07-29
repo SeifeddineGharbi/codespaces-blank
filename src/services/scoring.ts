@@ -11,8 +11,8 @@
  * @author Backend Agent - Productivity Morning Routine
  */
 
-import { FirestoreTaskCompletion, FirestoreDailyProgress } from '@/src/types';
-import { SCORING_CONFIG, MOTIVATIONAL_MESSAGES, MVP_TASKS } from '@/src/constants';
+import { FirestoreTaskCompletion, FirestoreDailyProgress } from '../types';
+import { SCORING_CONFIG, MOTIVATIONAL_MESSAGES, MVP_TASKS } from '../constants';
 
 // Scoring interfaces
 export interface TaskScore {

@@ -56,13 +56,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // User is signed in, fetch their profile
         try {
           console.log('👤 Fetching user profile for:', firebaseUser.uid);
-          const profile = await enhancedDbService.userProfile.getUserProfile(firebaseUser.uid);
+          const profileResult = await enhancedDbService.userProfile.getUserProfile(firebaseUser.uid);
           
-          if (profile) {
+          if (profileResult.success && profileResult.data) {
             console.log('✅ User profile loaded successfully');
-            setUserProfile(profile as any);
+            setUserProfile(profileResult.data as any);
           } else {
-            console.log('ℹ️ No user profile found, user may need onboarding');
+            console.log('ℹ️ No user profile found:', profileResult.error || 'Unknown error');
+            console.log('ℹ️ User may need onboarding or profile creation');
             setUserProfile(null);
           }
         } catch (error) {
@@ -206,11 +207,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     console.log('🔄 Refreshing user profile...');
     try {
-      const profile = await enhancedDbService.userProfile.getUserProfile(user.uid);
-      setUserProfile(profile as any);
-      console.log('✅ User profile refreshed');
+      const profileResult = await enhancedDbService.userProfile.getUserProfile(user.uid);
+      
+      if (profileResult.success && profileResult.data) {
+        setUserProfile(profileResult.data as any);
+        console.log('✅ User profile refreshed');
+      } else {
+        console.log('ℹ️ Failed to refresh user profile:', profileResult.error || 'Unknown error');
+        setUserProfile(null);
+      }
     } catch (error) {
       console.error('❌ Error refreshing user profile:', error);
+      setUserProfile(null);
     }
   };
 

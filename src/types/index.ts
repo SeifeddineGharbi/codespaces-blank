@@ -1,5 +1,8 @@
 // Type definitions for Productivity Morning Routine App
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, FieldValue } from 'firebase/firestore';
+
+// Type alias for timestamp fields that can be set during creation or after retrieval
+export type TimestampField = Timestamp | FieldValue;
 
 // Onboarding question types
 export type QuestionType = 'time_picker' | 'single_choice' | 'multiple_choice' | 'scale';
@@ -23,7 +26,7 @@ export interface FirestoreUserProfile {
   };
   onboarding: {
     isCompleted: boolean;
-    completedAt?: Timestamp;
+    completedAt?: TimestampField;
     responses: FirestoreOnboardingResponses;
   };
   routine: {
@@ -49,7 +52,7 @@ export interface FirestoreUserProfile {
   subscription: {
     status: 'active' | 'cancelled' | 'expired' | 'trial' | 'none';
     plan?: 'weekly' | 'annual';
-    expiresAt?: Timestamp;
+    expiresAt?: TimestampField;
     isTrialUser: boolean;
     hasUsedTrial: boolean;
   };
@@ -59,13 +62,13 @@ export interface FirestoreUserProfile {
     longestStreak: number;
     averageCompletionScore: number;
     totalDaysActive: number;
-    joinDate: Timestamp;
-    lastActive: Timestamp;
+    joinDate: TimestampField;
+    lastActive: TimestampField;
     achievements: string[];
   };
   metadata: {
-    createdAt: Timestamp;
-    lastUpdated: Timestamp;
+    createdAt: TimestampField;
+    lastUpdated: TimestampField;
     version: number;
     deviceInfo?: {
       platform: 'ios' | 'android';
@@ -116,8 +119,8 @@ export interface FirestoreDailyProgress {
   userId: string;
   date: string; // YYYY-MM-DD format
   session: {
-    startTime: Timestamp;
-    endTime?: Timestamp;
+    startTime: TimestampField;
+    endTime?: TimestampField;
     duration?: number; // actual duration in minutes
     isCompleted: boolean;
     completionPercentage: number; // 0-100
@@ -147,8 +150,8 @@ export interface FirestoreDailyProgress {
     lastCompletionDate?: string; // YYYY-MM-DD format
   };
   metadata: {
-    createdAt: Timestamp;
-    lastUpdated: Timestamp;
+    createdAt: TimestampField;
+    lastUpdated: TimestampField;
     dataSource: 'app' | 'sync' | 'manual';
   };
 }
@@ -160,8 +163,8 @@ export interface FirestoreTaskCompletion {
   plannedDuration: number; // minutes
   actualDuration?: number; // minutes
   status: 'not_started' | 'in_progress' | 'completed' | 'skipped';
-  startTime?: Timestamp;
-  endTime?: Timestamp;
+  startTime?: TimestampField;
+  endTime?: TimestampField;
   notes?: string;
   rating?: number; // 1-5 satisfaction rating
 }
@@ -169,7 +172,7 @@ export interface FirestoreTaskCompletion {
 export interface FirestoreMilestone {
   type: 'streak' | 'completion' | 'consistency';
   value: number;
-  achievedAt: Timestamp;
+  achievedAt: TimestampField;
 }
 
 export interface UserProfile {

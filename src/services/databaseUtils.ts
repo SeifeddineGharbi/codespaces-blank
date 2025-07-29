@@ -8,11 +8,12 @@
  * @author Backend Agent - Productivity Morning Routine
  */
 
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, FieldValue } from 'firebase/firestore';
 import { 
   FirestoreUserProfile, 
   FirestoreDailyProgress, 
   FirestoreTaskCompletion,
+  TimestampField,
   UserProfile,
   DailyProgress,
   TaskCompletion
@@ -25,10 +26,25 @@ import { SCORING_CONFIG, MVP_TASKS } from '../constants';
 export class DataTransformUtils {
   /**
    * Convert Firestore Timestamp to JavaScript Date
+   * Handles both Timestamp instances and FieldValue (serverTimestamp) placeholders
    */
-  static timestampToDate(timestamp: Timestamp | null | undefined): Date | null {
+  static timestampToDate(timestamp: TimestampField | null | undefined): Date | null {
     if (!timestamp) return null;
-    return timestamp.toDate();
+    
+    // Handle serverTimestamp() FieldValue placeholders - return current date as fallback
+    if (timestamp instanceof FieldValue || 
+        (typeof timestamp === 'object' && 
+         (timestamp.constructor?.name?.includes('ServerTimestamp') || 
+          timestamp.toString?.().includes('ServerTimestamp')))) {
+      return new Date(); // Fallback to current date during creation
+    }
+    
+    // Handle regular Timestamp instances
+    if (timestamp instanceof Timestamp) {
+      return timestamp.toDate();
+    }
+    
+    return null;
   }
 
   /**

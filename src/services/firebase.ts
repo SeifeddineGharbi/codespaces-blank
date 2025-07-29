@@ -103,6 +103,34 @@ const sanitizeInput = (input: string) => {
   return input.replace(/[<>]/g, '');
 };
 
+/**
+ * Firestore Data Sanitization Utilities
+ * Firestore doesn't support undefined values - convert to null or omit entirely
+ */
+const sanitizeForFirestore = (data: any): any => {
+  if (data === null || data === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(data)) {
+    return data.map(sanitizeForFirestore);
+  }
+  
+  if (typeof data === 'object' && data !== null) {
+    const sanitized: any = {};
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+      if (value !== undefined) {
+        sanitized[key] = sanitizeForFirestore(value);
+      }
+      // If value is undefined, we omit it from the sanitized object
+    });
+    return sanitized;
+  }
+  
+  return data;
+};
+
 // Firebase configuration from google-services.json
 const firebaseConfig = {
   apiKey: "AIzaSyCEhFxLTUamzuJZKRYnZAX07yI7f1p_-IQ",
@@ -559,7 +587,10 @@ export const dbService = {
           }
         };
         
-        await setDoc(userRef, updateData, { merge: true });
+        // Sanitize data for Firestore (remove undefined values)
+        const sanitizedData = sanitizeForFirestore(updateData);
+        
+        await setDoc(userRef, sanitizedData, { merge: true });
         console.log('✅ User profile created/updated successfully:', userId);
       } catch (error) {
         throw handleFirebaseError(error, 'create/update user');
@@ -675,7 +706,10 @@ export const dbService = {
           }
         };
         
-        await setDoc(progressRef, updateData, { merge: true });
+        // Sanitize data for Firestore (remove undefined values)
+        const sanitizedData = sanitizeForFirestore(updateData);
+        
+        await setDoc(progressRef, sanitizedData, { merge: true });
         console.log('✅ Daily progress created/updated successfully:', userId, date);
       } catch (error) {
         throw handleFirebaseError(error, 'create/update progress');
@@ -1040,8 +1074,8 @@ export const enhancedDbService = {
     return await dailyProgressService.updateTaskCompletion(userId, today, taskId, {
       status,
       ...(notes ? { notes } : {}),
-      ...(status === 'completed' ? { endTime: serverTimestamp() as Timestamp } : {}),
-      ...(status === 'in_progress' ? { startTime: serverTimestamp() as Timestamp } : {}),
+      ...(status === 'completed' ? { endTime: serverTimestamp() } : {}),
+      ...(status === 'in_progress' ? { startTime: serverTimestamp() } : {}),
     });
   },
   
