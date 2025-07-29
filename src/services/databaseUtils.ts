@@ -54,8 +54,15 @@ export class DataTransformUtils {
       },
       onboarding: {
         isCompleted: firestoreProfile.onboarding.isCompleted,
-        completedAt: this.timestampToDate(firestoreProfile.onboarding.completedAt),
-        responses: firestoreProfile.onboarding.responses,
+        completedAt: this.timestampToDate(firestoreProfile.onboarding.completedAt) || undefined,
+        responses: {
+          currentWakeTime: firestoreProfile.onboarding.responses.currentWakeTime,
+          idealWakeTime: firestoreProfile.onboarding.responses.idealWakeTime || firestoreProfile.onboarding.responses.currentWakeTime,
+          motivations: firestoreProfile.onboarding.responses.motivations || [],
+          challenges: firestoreProfile.onboarding.responses.challenges || [],
+          experience: firestoreProfile.onboarding.responses.experience || 'beginner',
+          goals: firestoreProfile.onboarding.responses.goals || [],
+        },
       },
       routine: {
         wakeTime: firestoreProfile.routine.wakeTime,
@@ -71,7 +78,7 @@ export class DataTransformUtils {
       subscription: {
         status: firestoreProfile.subscription.status,
         plan: firestoreProfile.subscription.plan,
-        expiresAt: this.timestampToDate(firestoreProfile.subscription.expiresAt),
+        expiresAt: this.timestampToDate(firestoreProfile.subscription.expiresAt) || undefined,
         isTrialUser: firestoreProfile.subscription.isTrialUser,
         hasUsedTrial: firestoreProfile.subscription.hasUsedTrial,
       },
@@ -102,7 +109,7 @@ export class DataTransformUtils {
       date: firestoreProgress.date,
       session: {
         startTime: this.timestampToDate(firestoreProgress.session.startTime) || new Date(),
-        endTime: this.timestampToDate(firestoreProgress.session.endTime),
+        endTime: this.timestampToDate(firestoreProgress.session.endTime) || undefined,
         duration: firestoreProgress.session.duration,
         isCompleted: firestoreProgress.session.isCompleted,
         completionPercentage: firestoreProgress.session.completionPercentage,
@@ -114,8 +121,8 @@ export class DataTransformUtils {
         plannedDuration: task.plannedDuration,
         actualDuration: task.actualDuration,
         status: task.status,
-        startTime: this.timestampToDate(task.startTime),
-        endTime: this.timestampToDate(task.endTime),
+        startTime: this.timestampToDate(task.startTime) || undefined,
+        endTime: this.timestampToDate(task.endTime) || undefined,
         notes: task.notes,
         rating: task.rating,
       })),

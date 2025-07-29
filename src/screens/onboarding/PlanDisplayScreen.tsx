@@ -4,12 +4,14 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CommonActions } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS, MVP_TASKS } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { enhancedDbService } from '../../services/firebase';
+import { Timestamp } from 'firebase/firestore';
 
 const PlanDisplayScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -39,7 +41,8 @@ const PlanDisplayScreen: React.FC = () => {
       await enhancedDbService.userProfile.updateUserProfile(user.uid, {
         onboarding: {
           isCompleted: true,
-          completedAt: new Date(),
+          completedAt: Timestamp.now(),
+          responses: {} as any, // This will be updated with actual onboarding responses in real implementation
         }
       });
 
@@ -67,16 +70,29 @@ const PlanDisplayScreen: React.FC = () => {
   };
 
   return (
-    <View className="flex-1" style={{ backgroundColor: COLORS.background.light }}>
-      <ScrollView 
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="flex-1 px-6 py-12">
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background.light} />
+      <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.background.light }} edges={['top', 'left', 'right']}>
+        <ScrollView 
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
+        <View className="flex-1 px-6 py-4">
           {/* Header */}
           <View className="items-center mb-8">
-            <Text className="text-4xl mb-4">🎉</Text>
+            <View 
+              className="w-20 h-20 rounded-full items-center justify-center mb-4 shadow-lg elevation-3"
+              style={{ 
+                backgroundColor: COLORS.primary[50],
+                shadowColor: COLORS.primary[500],
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+              }}
+            >
+              <Text className="text-4xl">🎉</Text>
+            </View>
             <Text 
               className="text-3xl font-bold text-center mb-4"
               style={{ color: COLORS.text.primary }}
@@ -189,33 +205,40 @@ const PlanDisplayScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Start button */}
-          <TouchableOpacity
-            onPress={handleStartJourney}
-            disabled={isCompleting}
-            className="rounded-xl py-4 px-6 shadow-sm"
-            style={{
-              backgroundColor: isCompleting 
-                ? COLORS.background.gray 
-                : COLORS.primary[500],
-            }}
-          >
-            <Text 
-              className="text-white text-lg font-semibold text-center"
+          {/* Start button with safe bottom area */}
+          <View className="pb-6">
+            <TouchableOpacity
+              onPress={handleStartJourney}
+              disabled={isCompleting}
+              className="rounded-xl py-5 px-6 shadow-lg elevation-3"
+              style={{
+                backgroundColor: isCompleting 
+                  ? COLORS.background.gray 
+                  : COLORS.primary[500],
+                shadowColor: isCompleting ? '#000' : COLORS.primary[500],
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: isCompleting ? 0.1 : 0.3,
+                shadowRadius: 8,
+              }}
             >
-              {isCompleting ? 'Setting Up Your Account...' : 'Start My Journey'}
-            </Text>
-          </TouchableOpacity>
+              <Text 
+                className="text-white text-lg font-bold text-center"
+              >
+                {isCompleting ? 'Setting Up Your Account...' : 'Start My Journey 🚀'}
+              </Text>
+            </TouchableOpacity>
 
-          <Text 
-            className="text-sm text-center mt-4"
-            style={{ color: COLORS.text.muted }}
-          >
-            Ready to transform your mornings and conquer your days!
-          </Text>
+            <Text 
+              className="text-sm text-center mt-4"
+              style={{ color: COLORS.text.muted }}
+            >
+              Ready to transform your mornings and conquer your days!
+            </Text>
+          </View>
         </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 };
 

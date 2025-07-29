@@ -268,7 +268,7 @@ export class UserProfileService {
           throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
         }
 
-        transaction.update(userRef, updatedData);
+        transaction.update(userRef, updatedData as any);
         return updatedData;
       });
 
@@ -337,7 +337,12 @@ export class UserProfileService {
   async updateSubscription(userId: string, subscriptionData: Partial<FirestoreUserProfile['subscription']>): Promise<DatabaseResult<boolean>> {
     try {
       const updates: Partial<FirestoreUserProfile> = {
-        subscription: subscriptionData
+        subscription: {
+          status: 'none',
+          isTrialUser: false,
+          hasUsedTrial: false,
+          ...subscriptionData
+        }
       };
 
       const result = await this.updateUserProfile(userId, updates);

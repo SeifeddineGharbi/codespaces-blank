@@ -23,18 +23,20 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   return (
     <View className="w-full mb-6">
       {/* Step counter */}
-      <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-sm font-medium" style={{ color: COLORS.text.secondary }}>
+      <View className="flex-row justify-between items-center mb-3">
+        <Text className="text-base font-semibold" style={{ color: COLORS.text.primary }}>
           {title || 'Question'} {currentStep} of {totalSteps}
         </Text>
-        <Text className="text-sm font-medium" style={{ color: COLORS.text.secondary }}>
-          {Math.round(progressPercentage)}%
-        </Text>
+        <View className="px-3 py-1 rounded-full" style={{ backgroundColor: COLORS.primary[50] }}>
+          <Text className="text-sm font-bold" style={{ color: COLORS.primary[600] }}>
+            {Math.round(progressPercentage)}%
+          </Text>
+        </View>
       </View>
 
       {/* Progress bar container */}
       <View 
-        className="w-full h-2 rounded-full"
+        className="w-full h-3 rounded-full shadow-sm"
         style={{ backgroundColor: COLORS.background.gray }}
       >
         {/* Progress bar fill */}
@@ -43,6 +45,10 @@ const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
           style={{
             backgroundColor: COLORS.primary[500],
             width: `${progressPercentage}%`,
+            shadowColor: COLORS.primary[500],
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.3,
+            shadowRadius: 2,
           }}
         />
       </View>

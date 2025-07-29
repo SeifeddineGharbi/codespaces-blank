@@ -4,7 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, Animated } from 'react-native';
+import { View, Text, Animated, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { COLORS } from '../../constants';
@@ -73,14 +74,22 @@ const PersonalizationAnimationScreen: React.FC = () => {
   }, [navigation]);
 
   return (
-    <View className="flex-1 items-center justify-center px-8" style={{ backgroundColor: COLORS.background.light }}>
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background.light} />
+      <SafeAreaView className="flex-1 items-center justify-center px-8" style={{ backgroundColor: COLORS.background.light }} edges={['top', 'left', 'right', 'bottom']}>
       {/* Loading indicator */}
       <View className="items-center mb-8">
         <View 
-          className="w-20 h-20 rounded-full items-center justify-center mb-6"
-          style={{ backgroundColor: COLORS.primary[50] }}
+          className="w-24 h-24 rounded-full items-center justify-center mb-6 shadow-lg elevation-3"
+          style={{ 
+            backgroundColor: COLORS.primary[50],
+            shadowColor: COLORS.primary[500],
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+          }}
         >
-          <Text className="text-4xl">
+          <Text className="text-5xl">
             {animationSteps[currentStep]?.emoji}
           </Text>
         </View>
@@ -125,7 +134,8 @@ const PersonalizationAnimationScreen: React.FC = () => {
       >
         We're creating a routine that fits your unique lifestyle and goals.
       </Text>
-    </View>
+      </SafeAreaView>
+    </>
   );
 };
 

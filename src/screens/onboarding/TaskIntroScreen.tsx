@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { COLORS, MVP_TASKS } from '../../constants';
@@ -20,13 +21,15 @@ const TaskIntroScreen: React.FC = () => {
   };
 
   return (
-    <View className="flex-1" style={{ backgroundColor: COLORS.background.light }}>
-      <ScrollView 
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="flex-1 px-6 py-12">
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background.light} />
+      <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.background.light }} edges={['top', 'left', 'right']}>
+        <ScrollView 
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
+        <View className="flex-1 px-6 py-4">
           {/* Header */}
           <View className="mb-8">
             <Text 
@@ -48,18 +51,22 @@ const TaskIntroScreen: React.FC = () => {
             {MVP_TASKS.map((task, index) => (
               <View
                 key={task.id}
-                className="rounded-2xl p-6 border-2"
+                className="rounded-2xl p-6 border shadow-sm elevation-2"
                 style={{
                   backgroundColor: COLORS.background.white,
                   borderColor: COLORS.background.gray,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
                 }}
               >
-                <View className="flex-row items-center mb-3">
+                <View className="flex-row items-center mb-4">
                   <View 
-                    className="w-12 h-12 rounded-full items-center justify-center mr-4"
-                    style={{ backgroundColor: `${task.color}20` }}
+                    className="w-14 h-14 rounded-full items-center justify-center mr-4 shadow-sm"
+                    style={{ backgroundColor: `${task.color}30` }}
                   >
-                    <Text className="text-2xl">{task.emoji}</Text>
+                    <Text className="text-3xl">{task.emoji}</Text>
                   </View>
                   <Text 
                     className="text-xl font-bold flex-1"
@@ -126,28 +133,37 @@ const TaskIntroScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Continue button */}
-          <TouchableOpacity
-            onPress={handleContinue}
-            className="rounded-xl py-4 px-6 shadow-sm"
-            style={{ backgroundColor: COLORS.primary[500] }}
-          >
-            <Text 
-              className="text-white text-lg font-semibold text-center"
+          {/* Continue button with safe bottom area */}
+          <View className="pb-6">
+            <TouchableOpacity
+              onPress={handleContinue}
+              className="rounded-xl py-5 px-6 shadow-lg elevation-3"
+              style={{ 
+                backgroundColor: COLORS.primary[500],
+                shadowColor: COLORS.primary[500],
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+              }}
             >
-              Let's Personalize Your Routine
-            </Text>
-          </TouchableOpacity>
+              <Text 
+                className="text-white text-lg font-bold text-center"
+              >
+                Let's Personalize Your Routine 🎯
+              </Text>
+            </TouchableOpacity>
 
-          <Text 
-            className="text-sm text-center mt-4"
-            style={{ color: COLORS.text.muted }}
-          >
-            Just a few quick questions to customize your experience
-          </Text>
+            <Text 
+              className="text-sm text-center mt-4"
+              style={{ color: COLORS.text.muted }}
+            >
+              Just a few quick questions to customize your experience
+            </Text>
+          </View>
         </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 };
 
